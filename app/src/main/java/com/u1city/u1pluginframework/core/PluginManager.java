@@ -41,6 +41,11 @@ public class PluginManager {
         hostChoosePolicy = new DefaultHostChoosePolicy();
     }
 
+    /**
+     * 安装插件，首先检查
+     * @param pluginPath
+     * @throws Exception
+     */
     public void installPlugin(String pluginPath) throws Exception{
         if(checkPluginPath(pluginPath)){
             packageManager.installPlugin(pluginPath);
