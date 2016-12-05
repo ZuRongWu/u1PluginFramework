@@ -65,7 +65,7 @@ public class PackageManager {
         //暂时不支持隐式启动
 
         for(ActivityInfo ai:apk.getPackageInfo().activities){
-            if(ai.targetActivity.equals(compnentName)){
+            if(ai.targetActivity.endsWith(compnentName)){
                 return ai;
             }
         }

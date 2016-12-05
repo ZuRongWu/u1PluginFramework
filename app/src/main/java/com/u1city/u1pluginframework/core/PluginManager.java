@@ -42,8 +42,9 @@ public class PluginManager {
     }
 
     /**
-     * 安装插件，首先检查
-     * @param pluginPath
+     * 安装插件，首先检查插件包是否存在以及各式是否正确，只接收.apk;.zip;.jar各式的文件
+     * 建议不要在ui线程运行此方法，因为在安装依赖包时可能要下载依赖包
+     * @param pluginPath 插件对应的绝对路径
      * @throws Exception
      */
     public void installPlugin(String pluginPath) throws Exception{
@@ -86,7 +87,7 @@ public class PluginManager {
             }
             ActivityInfo ai = packageManager.findPluginActivity(compnentName, apk);
             if(ai != null){
-                Class<HostActivity> hostClazz = hostChoosePolicy.choose(ai);
+                Class<? extends HostActivity> hostClazz = hostChoosePolicy.choose(ai);
                 intent.setClass(this.context,hostClazz);
                 intent.putExtra(PluginActivity.KEY_PLUGIN_ACTIVITY_INFO, ai);
                 intent.putExtra(PluginActivity.KEY_PLUGIN_NAME,pluginName);

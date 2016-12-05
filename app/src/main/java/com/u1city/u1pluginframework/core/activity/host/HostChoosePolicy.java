@@ -9,5 +9,5 @@ import com.u1city.u1pluginframework.core.activity.host.HostActivity;
  * Created by wuzr on 2016/12/2.
  */
 public interface HostChoosePolicy {
-    Class<HostActivity> choose(ActivityInfo ai);
+    Class<? extends HostActivity> choose(ActivityInfo ai);
 }
