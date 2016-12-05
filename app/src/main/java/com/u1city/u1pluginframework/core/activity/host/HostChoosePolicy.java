@@ -1,8 +1,8 @@
-package com.u1city.u1pluginframework.core;
+package com.u1city.u1pluginframework.core.activity.host;
 
 import android.content.pm.ActivityInfo;
 
-import com.u1city.u1pluginframework.core.activity.HostActivity;
+import com.u1city.u1pluginframework.core.activity.host.HostActivity;
 
 /**
  * 根据PluginActivity 的ActivityInfo选择适当的宿主activity

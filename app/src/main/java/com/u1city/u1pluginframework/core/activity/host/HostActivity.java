@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.activity;
+package com.u1city.u1pluginframework.core.activity.host;
 
 import android.app.Activity;
 

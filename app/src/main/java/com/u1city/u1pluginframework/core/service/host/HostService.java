@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.service;
+package com.u1city.u1pluginframework.core.service.host;
 
 import android.app.Service;
 import android.content.Intent;
@@ -6,10 +6,10 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 
 /**
- * plugin service
+ * host service
  * Created by wuzr on 2016/12/2.
  */
-public class PluginService extends Service{
+public class HostService extends Service{
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

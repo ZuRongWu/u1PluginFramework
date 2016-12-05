@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 
-import com.u1city.u1pluginframework.core.activity.HostActivity;
-import com.u1city.u1pluginframework.core.activity.PluginActivity;
+import com.u1city.u1pluginframework.core.activity.host.DefaultHostChoosePolicy;
+import com.u1city.u1pluginframework.core.activity.host.HostActivity;
+import com.u1city.u1pluginframework.core.activity.host.HostChoosePolicy;
+import com.u1city.u1pluginframework.core.activity.plugin.PluginActivity;
 import com.u1city.u1pluginframework.core.error.PluginActivityNotFindException;
 import com.u1city.u1pluginframework.core.pk.PackageManager;
 import com.u1city.u1pluginframework.core.pk.PluginApk;
