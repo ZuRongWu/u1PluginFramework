@@ -4,6 +4,10 @@ android {
     compileSdkVersion 23
     buildToolsVersion "25.0.0"
 
+    lintOptions {
+        abortOnError false
+    }
+
     defaultConfig {
         applicationId "com.u1city.u1pluginframework"
         minSdkVersion 15
@@ -24,3 +28,16 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.4.0'
 }
+
+task clearJar(type: Delete) {
+    delete 'libs/sdk.jar'
+}
+
+task makeSdkJar(type:org.gradle.api.tasks.bundling.Jar) {
+    baseName 'pluginsdk'
+    //只打包org.cmdmac下的org.cmdmac.pluginsdk.impl和org.cmdmac.gamecenter,其他子包不会被打包进去
+    from('build/intermediates/classes/debug/com/u1city/u1pluginframework/core/')
+    into('com/u1city/u1pluginframework/core/')
+}
+
+makeSdkJar.dependsOn(clearJar, build)

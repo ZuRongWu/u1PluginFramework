@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.os.Build;
 import android.util.Log;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
@@ -13,11 +14,17 @@ import com.u1city.u1pluginframework.core.error.PluginActivityNotFindException;
 import com.u1city.u1pluginframework.core.error.UpLevelException;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import dalvik.system.DexClassLoader;
 
 /**
@@ -36,6 +43,8 @@ public class PackageManager {
     private String pluginNativeLibSubDir = "nativeLib/";
     private Map<String,PluginApk> pluginsByName;
     private Context context;
+    private ConfigParser configParser;
+    private DependencyLoader dependencyLoader;
 
     public static PackageManager getInstance(Context context){
         if(sPackageManager == null){
@@ -59,14 +68,31 @@ public class PackageManager {
             }
         }
         pluginsByName = new HashMap<>();
+        configParser = new BaseConfigParser();
+        dependencyLoader = new BaseDependencyLoader();
     }
 
     public ActivityInfo findPluginActivity(String compnentName,PluginApk apk) throws PluginActivityNotFindException{
         //暂时不支持隐式启动
-
+        //首先在本插件中查找
         for(ActivityInfo ai:apk.getPackageInfo().activities){
-            if(ai.targetActivity.endsWith(compnentName)){
+            if(ai.name.equals(compnentName)){
                 return ai;
+            }
+        }
+        //如果没找到在它所依赖的插件中查找
+        List<PluginApk.Dependency> dependencies = apk.getDependencies();
+        if(dependencies != null){
+            for(PluginApk.Dependency dependency:dependencies){
+                PluginApk dpapk = getPlugin(dependency.name);
+                if(dpapk != null){
+                    //正常情况应该一定可以执行到这里
+                    for(ActivityInfo ai:dpapk.getPackageInfo().activities){
+                        if(ai.name.equals(compnentName)){
+                            return ai;
+                        }
+                    }
+                }
             }
         }
         throw new PluginActivityNotFindException(compnentName);
@@ -93,8 +119,20 @@ public class PackageManager {
             Log.w(TAG,"插件" + pluginPath + "已安装");
             return;
         }
+        //把插件包拷贝到data/data/packageName/plugin/目录下
+        File from = new File(pluginPath);
+        FileInputStream in = new FileInputStream(from);
+        File to = new File(pluginBaseDir + apk.getPluginName() + ".apk");
+        FileOutputStream out = new FileOutputStream(to);
+        int len;
+        byte[] buffer = new byte[1024];
+        while ((len = in.read(buffer)) != -1){
+            out.write(buffer,0,len);
+        }
+        in.close();
+        out.close();
         //设置apkPath
-        apk.setApkPath(pluginPath);
+        apk.setApkPath(to.getAbsolutePath());
         //初始化Plugin的Resource
         Class<AssetManager> assetClazz = AssetManager.class;
         Constructor<AssetManager> assetCons = assetClazz.getConstructor();
@@ -102,12 +140,17 @@ public class PackageManager {
         AssetManager asset = assetCons.newInstance();
         Method addAsset = assetClazz.getDeclaredMethod("addAssetPath",String.class);
         addAsset.setAccessible(true);
-        addAsset.invoke(asset, pluginPath);
+        addAsset.invoke(asset, apk.getApkPath());
         Resources hostRes = context.getResources();
         Resources resources = new Resources(asset,hostRes.getDisplayMetrics(),hostRes.getConfiguration());
         apk.setResources(resources);
+        /*
+        * 在此处解决plugin之间的依赖问题
+        * */
+        configParser.parse(apk);
+        dependencyLoader.load(context,apk);
         //初始化codeDir和nativeLibDir
-        String codeDir = pluginBaseDir + apk.getPluginName() + pluginCodeSubDir;
+        String codeDir = pluginBaseDir + apk.getPluginName() + File.separator + pluginCodeSubDir;
         File f = new File(codeDir);
         if(!f.exists()){
             if(!f.mkdirs()){
@@ -115,7 +158,7 @@ public class PackageManager {
             }
         }
         apk.setCodeDir(codeDir);
-        String nativeLibDir = pluginBaseDir + apk.getPluginName() + pluginNativeLibSubDir;
+        String nativeLibDir = pluginBaseDir + apk.getPluginName() + File.separator + pluginNativeLibSubDir;
         f = new File(nativeLibDir);
         if(!f.exists()){
             if(!f.mkdirs()){
@@ -123,8 +166,24 @@ public class PackageManager {
             }
         }
         apk.setNativeLibDir(nativeLibDir);
+        //复制nativeCode到nativeLibDir目录下
+        copyNativeLib(apk);
         //初始化classLoader
-        DexClassLoader classLoader = new DexClassLoader(pluginPath,codeDir,nativeLibDir,PackageManager.class.getClassLoader());
+        DexClassLoader primaryLoader = new DexClassLoader(apk.getApkPath(),codeDir,nativeLibDir,PackageManager.class.getClassLoader());
+        PluginClassLoader classLoader = new PluginClassLoader(primaryLoader);
+        //把依赖的插件的代码和资源加入到当前插件
+        List<PluginApk.Dependency> dependencies = apk.getDependencies();
+        if(dependencies != null){
+            for(PluginApk.Dependency dependency:dependencies){
+                PluginApk dpapk = getPlugin(dependency.name);
+                if(dpapk == null){
+                    Log.e(TAG,"安装依赖失败：" + dependency.name);
+                    return;
+                }
+                apk.addResources(dpapk.getPluginName(),dpapk.getResources());
+                classLoader.addOtherLoader(dpapk.getClassLoader());
+            }
+        }
         apk.setClassLoader(classLoader);
         //保存plugin
         pluginsByName.put(apk.getPluginName(),apk);
@@ -186,5 +245,30 @@ public class PackageManager {
 
     public PluginApk getPlugin(String pluginName){
         return pluginsByName.get(pluginName);
+    }
+
+    /**
+     * 把nativeLib 复制到nativeLibDir目录下
+     * @param apk 表示安装的插件apk，里面存有nativeLib的原始路径和目标路径
+     */
+    private void copyNativeLib(PluginApk apk) throws Exception{
+        ZipFile apkFile = new ZipFile(apk.getApkPath());
+        String supportAbi = Build.CPU_ABI;
+        Enumeration entrys = apkFile.entries();
+        ZipEntry entry;
+        while (entrys.hasMoreElements()){
+            entry = (ZipEntry) entrys.nextElement();
+            if(entry.getName().endsWith(".so")&&entry.getName().contains(supportAbi)){
+                int index = entry.getName().indexOf(File.separator);
+                String libName = entry.getName().substring(index + 1);
+                FileOutputStream out = new FileOutputStream(new File(apk.getNativeLibDir() + libName));
+                InputStream in = apkFile.getInputStream(entry);
+                int len;
+                byte[] buffers = new byte[1024];
+                while((len = in.read(buffers)) != -1){
+                    out.write(buffers,0,len);
+                }
+            }
+        }
     }
 }

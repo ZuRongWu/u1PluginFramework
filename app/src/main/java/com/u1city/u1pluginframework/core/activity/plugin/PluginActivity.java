@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,17 +31,20 @@ import com.u1city.u1pluginframework.core.pk.PluginApk;
 public class PluginActivity extends Activity implements IPlugin{
     public static final String KEY_PLUGIN_ACTIVITY_INFO = "key_plugin_activityInfo";
     public static final String KEY_PLUGIN_NAME = "key_plugin_name";
+    private static final String TAG = "PluginActivity";
 
     protected HostActivity host;
     private PluginApk apk;
     @Override
     public void onPluginCreate(Bundle savedInstanceState) {
         host.onSuperCreate(savedInstanceState);
+        Log.d(TAG,"======onPluginCreate======");
     }
 
     @Override
     public void onPluginStart() {
         host.onSuperStart();
+        Log.d(TAG, "======onPluginStart======");
     }
 
     @Override
@@ -56,11 +60,13 @@ public class PluginActivity extends Activity implements IPlugin{
     @Override
     public void onPluginResume() {
         host.onSuperResume();
+        Log.d(TAG, "======onPluginResume======");
     }
 
     @Override
     public void onPluginPause() {
         host.onSuperPause();
+        Log.d(TAG, "======onPluginPause======");
     }
 
     @Override
@@ -71,11 +77,13 @@ public class PluginActivity extends Activity implements IPlugin{
     @Override
     public void onPluginStop() {
         host.onSuperStop();
+        Log.d(TAG, "======onPluginStop======");
     }
 
     @Override
     public void onPluginDestroy() {
         host.onSuperDestroy();
+        Log.d(TAG, "======onPluginDestroy======");
     }
 
     @Override
@@ -90,7 +98,7 @@ public class PluginActivity extends Activity implements IPlugin{
 
     @Override
     public void onPluginUserLeaveHint() {
-        host.onSuperUserInteraction();
+        host.onSuperUserLeaveHint();
     }
 
     @Override

@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 
-import com.u1city.u1pluginframework.core.activity.host.DefaultHostChoosePolicy;
+import com.u1city.u1pluginframework.core.activity.host.BaseHostChoosePolicy;
 import com.u1city.u1pluginframework.core.activity.host.HostActivity;
 import com.u1city.u1pluginframework.core.activity.host.HostChoosePolicy;
 import com.u1city.u1pluginframework.core.activity.plugin.PluginActivity;
@@ -38,7 +38,7 @@ public class PluginManager {
     private PluginManager(Context context) {
         this.context = context;
         packageManager = PackageManager.getInstance(this.context);
-        hostChoosePolicy = new DefaultHostChoosePolicy();
+        hostChoosePolicy = new BaseHostChoosePolicy();
     }
 
     /**
@@ -90,7 +90,8 @@ public class PluginManager {
                 Class<? extends HostActivity> hostClazz = hostChoosePolicy.choose(ai);
                 intent.setClass(this.context,hostClazz);
                 intent.putExtra(PluginActivity.KEY_PLUGIN_ACTIVITY_INFO, ai);
-                intent.putExtra(PluginActivity.KEY_PLUGIN_NAME,pluginName);
+                //pluginName不一定等于ai.packageName,也有可能是它所依赖的插件的pluginName
+                intent.putExtra(PluginActivity.KEY_PLUGIN_NAME,ai.packageName);
                 if(context instanceof Activity){
                     ((Activity)context).startActivityForResult(intent,requestCode);
                 }else{

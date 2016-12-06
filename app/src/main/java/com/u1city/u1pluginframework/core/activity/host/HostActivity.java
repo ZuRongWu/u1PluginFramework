@@ -29,7 +29,8 @@ import com.u1city.u1pluginframework.core.pk.PluginApk;
  * host activity
  * Created by user on 2016/12/2.
  */
-public class HostActivity extends Activity{
+public class HostActivity extends Activity {
+    private static final String TAG = "HostActivity";
     private IPlugin plugin;
     private ActivityInfo pluginInfo;
 
@@ -39,20 +40,24 @@ public class HostActivity extends Activity{
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
         String pluginName = getIntent().getStringExtra(PluginActivity.KEY_PLUGIN_NAME);
-        if(pluginName == null||pluginName.equals("")){
+        if (pluginName == null || pluginName.equals("")) {
             finish();
             return;
         }
         PackageManager packageManager = PackageManager.getInstance(getApplicationContext());
         PluginApk apk = packageManager.getPlugin(pluginName);
         ActivityInfo ai = getIntent().getParcelableExtra(PluginActivity.KEY_PLUGIN_ACTIVITY_INFO);
-        if(ai == null){
+        if (ai == null) {
             finish();
             return;
         }
         this.pluginInfo = ai;
-        String acName = ai.targetActivity;
+        String acName = ai.name;
         try {
             Class acClazz = apk.getClassLoader().loadClass(acName);
             plugin = (IPlugin) acClazz.newInstance();
@@ -62,668 +67,664 @@ public class HostActivity extends Activity{
             e.printStackTrace();
             finish();
         }
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        if(plugin != null){
-            //把activity的theme替换成插件activity的theme
-            onApplyThemeResource(getTheme(),pluginInfo.theme,false);
+        //把activity的theme替换成插件activity的theme
+        onApplyThemeResource(getTheme(), pluginInfo.theme, false);
+        if (plugin != null) {
             plugin.onPluginCreate(savedInstanceState);
-        }else{
+        } else {
             super.onCreate(savedInstanceState);
         }
     }
 
-    public void onSuperCreate(Bundle savedInstanceState){
+    public void onSuperCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
 
     @Override
     public boolean onCreateThumbnail(Bitmap outBitmap, Canvas canvas) {
-        if(plugin != null){
-            return plugin.onPluginCreateThumbnail(outBitmap,canvas);
-        }else{
+        if (plugin != null) {
+            return plugin.onPluginCreateThumbnail(outBitmap, canvas);
+        } else {
             return super.onCreateThumbnail(outBitmap, canvas);
         }
     }
 
-    public boolean onSuperCreateThumbnail(Bitmap outBitmap, Canvas canvas){
-        return super.onCreateThumbnail(outBitmap,canvas);
+    public boolean onSuperCreateThumbnail(Bitmap outBitmap, Canvas canvas) {
+        return super.onCreateThumbnail(outBitmap, canvas);
     }
 
     @Nullable
     @Override
     public CharSequence onCreateDescription() {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginCreateDescription();
-        }else{
+        } else {
             return super.onCreateDescription();
         }
     }
 
-    public CharSequence onSuperCreateDescription(){
+    public CharSequence onSuperCreateDescription() {
         return super.onCreateDescription();
     }
 
     @Override
     protected void onUserLeaveHint() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginUserLeaveHint();
-        }else{
+        } else {
             super.onUserLeaveHint();
         }
     }
 
-    public void onSuperUserLeaveHint(){
+    public void onSuperUserLeaveHint() {
         super.onUserLeaveHint();
     }
 
     @Override
     protected void onPause() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginPause();
-        }else{
+        } else {
             super.onPause();
         }
     }
 
-    public void onSuperPause(){
+    public void onSuperPause() {
         super.onPause();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-       if(plugin != null){
-           plugin.onPluginSaveInstanceState(outState);
-       }else{
-           super.onSaveInstanceState(outState);
-       }
+        if (plugin != null) {
+            plugin.onPluginSaveInstanceState(outState);
+        } else {
+            super.onSaveInstanceState(outState);
+        }
     }
 
-    public void onSuperSaveInstanceState(Bundle outState){
+    public void onSuperSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginNewIntent(intent);
-        }else{
+        } else {
             super.onNewIntent(intent);
         }
     }
 
-    public void onSuperNewIntent(Intent intent){
+    public void onSuperNewIntent(Intent intent) {
         super.onNewIntent(intent);
     }
 
     @Override
     protected void onResume() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginResume();
-        }else{
+        } else {
             super.onResume();
         }
     }
 
-    public void onSuperResume(){
+    public void onSuperResume() {
         super.onResume();
     }
 
     @Override
     public void onStateNotSaved() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginStateNotSaved();
-        }else{
+        } else {
             super.onStateNotSaved();
         }
     }
 
-    public void onSuperStateNotSaved(){
+    public void onSuperStateNotSaved() {
         super.onStateNotSaved();
     }
 
     @Override
     protected void onRestart() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginRestart();
-        }else{
+        } else {
             super.onRestart();
         }
     }
 
-    public void onSuperRestart(){
+    public void onSuperRestart() {
         super.onRestart();
     }
 
     @Override
     protected void onStart() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginStart();
-        }else{
+        } else {
             super.onStart();
         }
     }
 
-    public void onSuperStart(){
+    public void onSuperStart() {
         super.onStart();
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginRestoreInstanceState(savedInstanceState);
-        }else{
+        } else {
             super.onRestoreInstanceState(savedInstanceState);
         }
     }
 
-    public void onSuperRestoreInstanceState(Bundle saveInstanceState){
+    public void onSuperRestoreInstanceState(Bundle saveInstanceState) {
         super.onRestoreInstanceState(saveInstanceState);
     }
 
     @Override
     protected void onStop() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginStop();
-        }else{
+        } else {
             super.onStop();
         }
     }
 
-    public void onSuperStop(){
+    public void onSuperStop() {
         super.onStop();
     }
 
     @Override
     protected void onDestroy() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginDestroy();
-        }else{
+        } else {
             super.onDestroy();
         }
     }
 
-    public void onSuperDestroy(){
+    public void onSuperDestroy() {
         super.onDestroy();
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginConfigurationChanged(newConfig);
-        }else{
+        } else {
             super.onConfigurationChanged(newConfig);
         }
     }
 
-    public void onSuperConfigurationChanged(Configuration newConfig){
+    public void onSuperConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
     }
 
     @Override
     public void onLowMemory() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginLowMemory();
-        }else{
+        } else {
             super.onLowMemory();
         }
     }
 
-    public void onSuperLowMemory(){
+    public void onSuperLowMemory() {
         super.onLowMemory();
     }
 
     @Override
     public void onTrimMemory(int level) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginTrimMemory(level);
-        }else{
+        } else {
             super.onTrimMemory(level);
         }
     }
 
-    public void onSuperTrimMemory(int level){
+    public void onSuperTrimMemory(int level) {
         super.onTrimMemory(level);
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if(plugin != null){
-            return plugin.onPluginKeyDown(keyCode,event);
-        }else{
-            return super.onKeyDown(keyCode,event);
+        if (plugin != null) {
+            return plugin.onPluginKeyDown(keyCode, event);
+        } else {
+            return super.onKeyDown(keyCode, event);
         }
     }
 
-    public boolean onSuperKeyDown(int keyCode,KeyEvent event){
-        return super.onKeyDown(keyCode,event);
+    public boolean onSuperKeyDown(int keyCode, KeyEvent event) {
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-       if(plugin != null){
-           return plugin.onPluginKeyLongPress(keyCode, event);
+        if (plugin != null) {
+            return plugin.onPluginKeyLongPress(keyCode, event);
 
-       }else {
-           return super.onKeyLongPress(keyCode, event);
-       }
+        } else {
+            return super.onKeyLongPress(keyCode, event);
+        }
     }
 
-    public boolean onSuperKeyLongPress(int keyCode,KeyEvent event){
-        return super.onKeyLongPress(keyCode,event);
+    public boolean onSuperKeyLongPress(int keyCode, KeyEvent event) {
+        return super.onKeyLongPress(keyCode, event);
     }
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginKeyUp(keyCode, event);
-        }else{
+        } else {
             return super.onKeyUp(keyCode, event);
         }
     }
 
-    public boolean onSuperKeyUp(int keyCode,KeyEvent event){
-        return super.onKeyUp(keyCode,event);
+    public boolean onSuperKeyUp(int keyCode, KeyEvent event) {
+        return super.onKeyUp(keyCode, event);
     }
 
     @Override
     public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginKeyMultiple(keyCode, repeatCount, event);
-        }else {
+        } else {
             return super.onKeyMultiple(keyCode, repeatCount, event);
         }
     }
 
-    public boolean onSuperKeyMultiple(int keyCode,int repeatCount,KeyEvent event){
-        return super.onKeyMultiple(keyCode,repeatCount,event);
+    public boolean onSuperKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+        return super.onKeyMultiple(keyCode, repeatCount, event);
     }
 
     @Override
     public void onBackPressed() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginBackPressed();
-        }else{
+        } else {
             super.onBackPressed();
         }
     }
 
-    public void onSuperBackPressed(){
+    public void onSuperBackPressed() {
         super.onBackPressed();
     }
 
     @Override
     public boolean onKeyShortcut(int keyCode, KeyEvent event) {
-        if(plugin != null){
-            return plugin.onPluginKeyShortcut(keyCode,event);
-        }else{
-            return super.onKeyShortcut(keyCode,event);
+        if (plugin != null) {
+            return plugin.onPluginKeyShortcut(keyCode, event);
+        } else {
+            return super.onKeyShortcut(keyCode, event);
         }
     }
 
-    public boolean onSuperKeyShortcut(int keyCode,KeyEvent event){
-        return super.onKeyShortcut(keyCode,event);
+    public boolean onSuperKeyShortcut(int keyCode, KeyEvent event) {
+        return super.onKeyShortcut(keyCode, event);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginTouchEvent(event);
-        }else{
+        } else {
             return super.onTouchEvent(event);
         }
     }
 
-    public boolean onSuperTouchEvent(MotionEvent event){
+    public boolean onSuperTouchEvent(MotionEvent event) {
         return super.onTouchEvent(event);
     }
 
     @Override
     public void onUserInteraction() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginUserInteraction();
-        }else{
+        } else {
             super.onUserInteraction();
         }
     }
 
-    public void onSuperUserInteraction(){
+    public void onSuperUserInteraction() {
         super.onUserInteraction();
     }
 
     @Override
     public void onWindowAttributesChanged(WindowManager.LayoutParams params) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginWindowAttributesChanged(params);
-        }else{
+        } else {
             super.onWindowAttributesChanged(params);
         }
     }
 
-    public void onSuperWindowAttributesChanged(WindowManager.LayoutParams params){
+    public void onSuperWindowAttributesChanged(WindowManager.LayoutParams params) {
         super.onWindowAttributesChanged(params);
     }
 
     @Override
     public void onContentChanged() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginContentChanged();
-        }else {
+        } else {
             super.onContentChanged();
         }
     }
 
-    public void onSuperContentChanged(){
+    public void onSuperContentChanged() {
         super.onContentChanged();
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginWindowFocusChanged(hasFocus);
-        }else{
+        } else {
             super.onWindowFocusChanged(hasFocus);
         }
     }
 
-    public void onSuperWindowFocusChanged(boolean hasFocus){
+    public void onSuperWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
     }
 
     @Override
     public void onAttachedToWindow() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginAttachedToWindow();
-        }else{
+        } else {
             super.onAttachedToWindow();
         }
     }
 
-    public void onSuperAttachedToWindow(){
+    public void onSuperAttachedToWindow() {
         super.onAttachedToWindow();
     }
 
     @Override
     public void onDetachedFromWindow() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginDetachedFromWindow();
-        }else{
+        } else {
             super.onDetachedFromWindow();
         }
     }
 
-    public void onSuperDetachedFromWindow(){
+    public void onSuperDetachedFromWindow() {
         super.onDetachedFromWindow();
     }
 
     @Nullable
     @Override
     public View onCreatePanelView(int featureId) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginCreatePanelView(featureId);
-        }else {
+        } else {
             return super.onCreatePanelView(featureId);
         }
     }
 
-    public View onSuperCreatePanelView(int featureId){
+    public View onSuperCreatePanelView(int featureId) {
         return super.onCreatePanelView(featureId);
     }
 
     @Override
     public boolean onCreatePanelMenu(int featureId, Menu menu) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginCreatePanelMenu(featureId, menu);
         }
         return super.onCreatePanelMenu(featureId, menu);
     }
 
-    public boolean onSuperCreatePanelMenu(int featureId,Menu menu){
-        return super.onCreatePanelMenu(featureId,menu);
+    public boolean onSuperCreatePanelMenu(int featureId, Menu menu) {
+        return super.onCreatePanelMenu(featureId, menu);
     }
 
     @Override
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginPreparePanel(featureId, view, menu);
         }
         return super.onPreparePanel(featureId, view, menu);
     }
 
-    public boolean onSuperPreparePanel(int featureId,View view,Menu menu){
+    public boolean onSuperPreparePanel(int featureId, View view, Menu menu) {
         return super.onPreparePanel(featureId, view, menu);
     }
 
     @Override
     public boolean onMenuOpened(int featureId, Menu menu) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginMenuOpened(featureId, menu);
         }
         return super.onMenuOpened(featureId, menu);
     }
 
-    public boolean onSuperMenuOpened(int featureId,Menu menu){
+    public boolean onSuperMenuOpened(int featureId, Menu menu) {
         return super.onMenuOpened(featureId, menu);
     }
 
     @Override
     public boolean onMenuItemSelected(int featureId, MenuItem item) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginMenuItemSelected(featureId, item);
         }
         return super.onMenuItemSelected(featureId, item);
     }
 
-    public boolean onSuperMenuItemSelected(int featureId,MenuItem item){
+    public boolean onSuperMenuItemSelected(int featureId, MenuItem item) {
         return super.onMenuItemSelected(featureId, item);
     }
 
     @Override
     public void onPanelClosed(int featureId, Menu menu) {
-        if(plugin != null){
-            plugin.onPluginPanelClosed(featureId,menu);
-        }else{
+        if (plugin != null) {
+            plugin.onPluginPanelClosed(featureId, menu);
+        } else {
             super.onPanelClosed(featureId, menu);
         }
     }
 
-    public void onSuperPanelClosed(int featureId,Menu menu){
+    public void onSuperPanelClosed(int featureId, Menu menu) {
         super.onPanelClosed(featureId, menu);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginCreateOptionsMenu(menu);
         }
         return super.onCreateOptionsMenu(menu);
     }
 
-    public boolean onSuperCreateOptionsMenu(Menu menu){
+    public boolean onSuperCreateOptionsMenu(Menu menu) {
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginPrepareOptionsMenu(menu);
         }
         return super.onPrepareOptionsMenu(menu);
     }
 
-    public boolean onSuperPrepareOptionsMenu(Menu menu){
+    public boolean onSuperPrepareOptionsMenu(Menu menu) {
         return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginOptionsItemSelected(item);
         }
         return super.onOptionsItemSelected(item);
     }
 
 
-    public boolean onSuperOptionsItemSelected(MenuItem item){
+    public boolean onSuperOptionsItemSelected(MenuItem item) {
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onOptionsMenuClosed(Menu menu) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginOptionsMenuClosed(menu);
-        }else{
+        } else {
             super.onOptionsMenuClosed(menu);
         }
     }
 
-    public void onSuperOptionsMenuClosed(Menu menu){
+    public void onSuperOptionsMenuClosed(Menu menu) {
         super.onOptionsMenuClosed(menu);
     }
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.onPluginContextItemSelected(item);
-        }else {
+        } else {
             return super.onContextItemSelected(item);
         }
     }
 
-    public boolean onSuperContextItemSelected(MenuItem item){
+    public boolean onSuperContextItemSelected(MenuItem item) {
         return super.onContextItemSelected(item);
     }
 
     @Override
     public void onContextMenuClosed(Menu menu) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginContextMenuClosed(menu);
-        }else{
+        } else {
             super.onContextMenuClosed(menu);
         }
     }
 
-    public void onSuperContextMenuClosed(Menu menu){
+    public void onSuperContextMenuClosed(Menu menu) {
         super.onContextMenuClosed(menu);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginActivityResult(requestCode, resultCode, data);
-        }else{
+        } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
-    public void onSuperActivityResult(int requestCode, int resultCode, Intent data){
+    public void onSuperActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
     public void onActivityReenter(int resultCode, Intent data) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginActivityReenter(resultCode, data);
-        }else{
+        } else {
             super.onActivityReenter(resultCode, data);
         }
     }
 
-    public void onSuperActivityReenter(int resultCode,Intent data){
+    public void onSuperActivityReenter(int resultCode, Intent data) {
         super.onActivityReenter(resultCode, data);
     }
 
     @Override
     protected void onTitleChanged(CharSequence title, int color) {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginTitleChanged(title, color);
-        }else{
+        } else {
             super.onTitleChanged(title, color);
         }
     }
 
-    public void onSuperTitleChanged(CharSequence title,int color){
+    public void onSuperTitleChanged(CharSequence title, int color) {
         super.onTitleChanged(title, color);
     }
 
     @Nullable
     @Override
     public View onCreateView(String name, Context context, AttributeSet attrs) {
-        if(plugin != null){
-            return plugin.onPluginCreateView(name,context,attrs);
-        }else{
+        if (plugin != null) {
+            return plugin.onPluginCreateView(name, context, attrs);
+        } else {
             return super.onCreateView(name, context, attrs);
         }
     }
 
-    public View onSuperCreateView(String name, Context context, AttributeSet attrs){
+    public View onSuperCreateView(String name, Context context, AttributeSet attrs) {
         return super.onCreateView(name, context, attrs);
     }
 
     @Override
     public View onCreateView(View parent, String name, Context context, AttributeSet attrs) {
-        if(plugin != null){
-            return plugin.onPluginCreateView(parent,name,context,attrs);
-        }else{
+        if (plugin != null) {
+            return plugin.onPluginCreateView(parent, name, context, attrs);
+        } else {
             return super.onCreateView(parent, name, context, attrs);
         }
     }
 
-    public View onSuperCreateView(View parent,String name,Context context,AttributeSet attrs){
+    public View onSuperCreateView(View parent, String name, Context context, AttributeSet attrs) {
         return super.onCreateView(parent, name, context, attrs);
     }
 
     @Override
     public void onVisibleBehindCanceled() {
-        if(plugin != null){
+        if (plugin != null) {
             plugin.onPluginVisibleBehindCanceled();
-        }else{
+        } else {
             super.onVisibleBehindCanceled();
         }
     }
 
-    public void onSuperVisibleBehindCanceled(){
+    public void onSuperVisibleBehindCanceled() {
         super.onVisibleBehindCanceled();
     }
 
     @Override
     public void onEnterAnimationComplete() {
-        if(plugin != null){
-            try{
+        if (plugin != null) {
+            try {
                 plugin.onPluginEnterAnimationComplete();
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-        }else{
+        } else {
             super.onEnterAnimationComplete();
         }
     }
 
-    public void onSuperEnterAnimationComplete(){
+    public void onSuperEnterAnimationComplete() {
         super.onEnterAnimationComplete();
     }
 
     @Override
     public Resources getResources() {
-        if(plugin != null){
+        if (plugin != null) {
             return plugin.getPluginResource();
-        }else{
+        } else {
             return super.getResources();
         }
     }
 
-    public Resources getHostResource(){
+    public Resources getHostResource() {
         return super.getResources();
     }
 
     @Override
     public void startActivityForResult(Intent intent, int requestCode) {
-        if(plugin != null){
+        if (plugin != null) {
             PluginIntent pluginIntent = (PluginIntent) intent;
-            PluginManager.getInstance(getApplicationContext()).startPluginActivityForResult(this,pluginIntent,requestCode);
-        }else{
+            PluginManager.getInstance(getApplicationContext()).startPluginActivityForResult(this, pluginIntent, requestCode);
+        } else {
             super.startActivityForResult(intent, requestCode);
         }
     }
