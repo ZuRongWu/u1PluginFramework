@@ -3,6 +3,7 @@ package com.u1city.u1pluginframework.core.pk;
 import android.content.pm.PackageInfo;
 import android.content.res.Resources;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,18 @@ public class PluginApk {
     private String apkPath;
     private List<Dependency> dependencies;
     private Map<String,Resources> otherResources = new HashMap<>(3);
+    //依赖此插件的插件名称
+    private List<String> dependended;
+
+    public void addDepended(String pluginName){
+        if(dependended == null){
+            dependended = new ArrayList<>(3);
+        }
+    }
+
+    public List<String> getDependended(){
+        return dependended;
+    }
 
     public List<Dependency> getDependencies() {
         return dependencies;

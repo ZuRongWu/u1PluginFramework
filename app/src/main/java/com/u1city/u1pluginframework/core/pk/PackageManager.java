@@ -10,6 +10,7 @@ import android.os.Build;
 import android.util.Log;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
+import com.u1city.u1pluginframework.core.PluginManager;
 import com.u1city.u1pluginframework.core.error.PluginActivityNotFindException;
 import com.u1city.u1pluginframework.core.error.UpLevelException;
 
@@ -180,6 +181,7 @@ public class PackageManager {
                     Log.e(TAG,"安装依赖失败：" + dependency.name);
                     return;
                 }
+                dpapk.addDepended(apk.getPluginName());
                 apk.addResources(dpapk.getPluginName(),dpapk.getResources());
                 classLoader.addOtherLoader(dpapk.getClassLoader());
             }
@@ -200,8 +202,17 @@ public class PackageManager {
             return;
         }
 
-        //删除与这个插件关联的文件:code;nativeLib;插件apk文件
         PluginApk apk = pluginsByName.get(pluginName);
+        //检查是否有插件依赖此插件
+        if(apk.getDependended() != null&&apk.getDependended().size() > 0){
+            String logMsg = "不可以卸载插件，有插件依赖此插件：";
+            for(String dName:apk.getDependended()){
+                logMsg = logMsg + "[" +dName + "]";
+            }
+            Log.w(TAG,logMsg);
+            return;
+        }
+        //删除与这个插件关联的文件:code;nativeLib;插件apk文件
         File apkFile = new File(apk.getApkPath());
         if(!apkFile.delete()){
             Log.w(TAG,"删除文件" + apkFile.getAbsolutePath() + "失败");
@@ -217,6 +228,12 @@ public class PackageManager {
 
         //从map中移除apk
         pluginsByName.remove(pluginName);
+        //卸载插件apk依赖的插件
+        if(apk.getDependencies() != null&&apk.getDependencies().size() > 0){
+            for(PluginApk.Dependency dependency:apk.getDependencies()){
+                PluginManager.getInstance(context).uninstallPlugin(dependency.name);
+            }
+        }
     }
 
     /**

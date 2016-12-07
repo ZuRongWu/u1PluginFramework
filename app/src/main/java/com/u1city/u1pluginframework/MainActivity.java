@@ -31,4 +31,12 @@ public class MainActivity extends Activity {
         intent.setPluginName("com.u1city.u1pluginexample");
         pluginManager.startPluginActivityForResult(this,intent,0);
     }
+
+    public void uninstallPlugin(View view) {
+        try{
+            pluginManager.uninstallPlugin("com.u1city.u1pluginexample");
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 }

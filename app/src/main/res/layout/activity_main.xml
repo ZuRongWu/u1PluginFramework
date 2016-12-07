@@ -12,6 +12,12 @@
         android:layout_height="wrap_content"
         android:onClick="installPlugin"/>
 
+    <Button android:text="卸载插件"
+        android:layout_marginTop="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="uninstallPlugin"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

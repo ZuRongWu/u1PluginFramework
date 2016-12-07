@@ -92,6 +92,7 @@ public class PluginManager {
                 intent.putExtra(PluginActivity.KEY_PLUGIN_ACTIVITY_INFO, ai);
                 //pluginName不一定等于ai.packageName,也有可能是它所依赖的插件的pluginName
                 intent.putExtra(PluginActivity.KEY_PLUGIN_NAME,ai.packageName);
+                intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY);
                 if(context instanceof Activity){
                     ((Activity)context).startActivityForResult(intent,requestCode);
                 }else{

@@ -307,6 +307,11 @@ public class PluginActivity extends Activity implements IPlugin{
     }
 
     @Override
+    public Resources getPluginResource(String pluginName) {
+        return apk.getResources(pluginName);
+    }
+
+    @Override
     public void startPluginActivity(PluginIntent intent) {
         startPluginActivityForResult(intent,0);
     }

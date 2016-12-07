@@ -77,6 +77,7 @@ public interface IPlugin {
     void setPluginContentView(View view);
     Resources getPluginResource();
     Resources getHostResource();
+    Resources getPluginResource(String pluginName);
     void startPluginActivity(PluginIntent intent);
     void startPluginActivityForResult(PluginIntent intent,int requestCode);
     View findPluginViewById(int id);

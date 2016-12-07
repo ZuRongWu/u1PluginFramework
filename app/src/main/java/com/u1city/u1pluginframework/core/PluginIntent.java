@@ -9,12 +9,22 @@ import android.net.Uri;
  */
 public class PluginIntent extends Intent{
     public static final int FLAG_LAUNCH_PLUGIN = 1;
+    public static final int FLAG_LAUNCH_ACTUAL_ACTIVITY = 2;
     //默认为插件apk的文件名
     private String pluginName;
     private String pluginCompnentName;
     private String pluginAction;
     private String pluginType;
     private Uri pluginData;
+    private int pluginFlag;
+
+    public void addPluginFlag(int flag){
+        pluginFlag |= flag;
+    }
+
+    public boolean hasFlag(int flag){
+        return (pluginFlag&flag) != 0;
+    }
 
     public void setPluginAction(String pluginAction) {
         this.pluginAction = pluginAction;
