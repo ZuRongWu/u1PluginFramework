@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import dalvik.system.DexClassLoader;
 
 /**
  * package manager
@@ -39,9 +38,9 @@ public class PackageManager {
     /*插件的根目录:data/data/packageName/plugin/*/
     private String pluginBaseDir;
     /*插件代码的安装目录：data/data/packageName/plugin/pluginName/code/*/
-    private String pluginCodeSubDir = "code/";
+    private static final String pluginCodeSubDir = "code/";
     /*插件原生代码的安装目录:data/data/packageName/plugin/pluginName/nativeLib/*/
-    private String pluginNativeLibSubDir = "nativeLib/";
+    private static final String pluginNativeLibSubDir = "nativeLib/";
     private Map<String,PluginApk> pluginsByName;
     private Context context;
     private ConfigParser configParser;
@@ -71,6 +70,10 @@ public class PackageManager {
         pluginsByName = new HashMap<>();
         configParser = new BaseConfigParser();
         dependencyLoader = new BaseDependencyLoader();
+    }
+
+    public String getPluginBaseDir(){
+        return pluginBaseDir;
     }
 
     public ActivityInfo findPluginActivity(String compnentName,PluginApk apk) throws PluginActivityNotFindException{
@@ -108,7 +111,7 @@ public class PackageManager {
      * @param pluginPath 插件包的绝对路径
      * @throws Exception
      */
-    public void installPlugin(String pluginPath) throws Exception {
+    public void installPlugin(String pluginPath,boolean shouldCopy) throws Exception {
         PluginApk apk = new PluginApk();
         android.content.pm.PackageManager pm = context.getPackageManager();
         PackageInfo packageInfo = pm.getPackageArchiveInfo(pluginPath,
@@ -120,20 +123,24 @@ public class PackageManager {
             Log.w(TAG,"插件" + pluginPath + "已安装");
             return;
         }
-        //把插件包拷贝到data/data/packageName/plugin/目录下
-        File from = new File(pluginPath);
-        FileInputStream in = new FileInputStream(from);
-        File to = new File(pluginBaseDir + apk.getPluginName() + ".apk");
-        FileOutputStream out = new FileOutputStream(to);
-        int len;
-        byte[] buffer = new byte[1024];
-        while ((len = in.read(buffer)) != -1){
-            out.write(buffer,0,len);
+        if(shouldCopy){
+            //把插件包拷贝到data/data/packageName/plugin/目录下
+            File from = new File(pluginPath);
+            FileInputStream in = new FileInputStream(from);
+            File to = new File(pluginBaseDir + apk.getPluginName() + ".apk");
+            FileOutputStream out = new FileOutputStream(to);
+            int len;
+            byte[] buffer = new byte[1024];
+            while ((len = in.read(buffer)) != -1){
+                out.write(buffer,0,len);
+            }
+            in.close();
+            out.close();
+            //设置apkPath
+            apk.setApkPath(to.getAbsolutePath());
+        }else {
+            apk.setApkPath(pluginPath);
         }
-        in.close();
-        out.close();
-        //设置apkPath
-        apk.setApkPath(to.getAbsolutePath());
         //初始化Plugin的Resource
         Class<AssetManager> assetClazz = AssetManager.class;
         Constructor<AssetManager> assetCons = assetClazz.getConstructor();
@@ -170,8 +177,7 @@ public class PackageManager {
         //复制nativeCode到nativeLibDir目录下
         copyNativeLib(apk);
         //初始化classLoader
-        DexClassLoader primaryLoader = new DexClassLoader(apk.getApkPath(),codeDir,nativeLibDir,PackageManager.class.getClassLoader());
-        PluginClassLoader classLoader = new PluginClassLoader(primaryLoader);
+        PluginClassLoader classLoader = new PluginClassLoader(apk.getApkPath(),codeDir,nativeLibDir,PackageManager.class.getClassLoader());
         //把依赖的插件的代码和资源加入到当前插件
         List<PluginApk.Dependency> dependencies = apk.getDependencies();
         if(dependencies != null){
@@ -207,7 +213,7 @@ public class PackageManager {
         if(apk.getDependended() != null&&apk.getDependended().size() > 0){
             String logMsg = "不可以卸载插件，有插件依赖此插件：";
             for(String dName:apk.getDependended()){
-                logMsg = logMsg + "[" +dName + "]";
+                logMsg = logMsg + "[" + dName + "]";
             }
             Log.w(TAG,logMsg);
             return;
@@ -248,7 +254,7 @@ public class PackageManager {
         PackageInfo packageInfo = pm.getPackageArchiveInfo(newPlugin,
                 android.content.pm.PackageManager.GET_ACTIVITIES | android.content.pm.PackageManager.GET_SERVICES);
         if(!pluginsByName.containsKey(packageInfo.packageName)){
-            installPlugin(newPlugin);
+            installPlugin(newPlugin,true);
             return;
         }
         int newVersion = packageInfo.versionCode;
@@ -257,7 +263,7 @@ public class PackageManager {
             throw new UpLevelException();
         }
         uninstallPlugin(packageInfo.packageName);
-        installPlugin(newPlugin);
+        installPlugin(newPlugin,true);
     }
 
     public PluginApk getPlugin(String pluginName){

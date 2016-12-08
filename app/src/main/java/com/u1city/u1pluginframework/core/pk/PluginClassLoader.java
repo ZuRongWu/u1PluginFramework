@@ -6,17 +6,20 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import dalvik.system.DexClassLoader;
+
 /**
- * 插件类加载器
+ * 插件类加载器,查找的顺序是：本插件对应的代码->依次查找它依赖的插件的代码
  * Created by wuzr on 2016/12/6.
  */
-public class PluginClassLoader extends ClassLoader{
+public class PluginClassLoader extends DexClassLoader{
 
     //依赖的插件的classLoader
     private List<ClassLoader> otherLoaders;
 
-    public PluginClassLoader(ClassLoader parent) {
-        super(parent);
+    public PluginClassLoader(String dexPath, String optimizedDirectory,
+                             String libraryPath, ClassLoader parent) {
+        super(dexPath,optimizedDirectory,libraryPath,parent);
     }
     public void addOtherLoader(ClassLoader loader){
         if(otherLoaders == null){
@@ -27,19 +30,35 @@ public class PluginClassLoader extends ClassLoader{
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        Class<?> clazz;
-        for(ClassLoader loader:otherLoaders){
-            clazz = loader.loadClass(name);
-            if(clazz != null){
-                return clazz;
-            }
+        Class<?> clazz = null;
+        try{
+            clazz = super.findClass(name);
+        }catch (Throwable e){
+            //do nothing
+        }
+        if(clazz == null){
+             clazz = findFromOthers(name);
+        }
+        if(clazz != null){
+            return clazz;
         }
         throw new ClassNotFoundException(name);
     }
 
+    //从依赖中查找
+    private Class<?> findFromOthers(String name) throws ClassNotFoundException {
+        for(ClassLoader loader:otherLoaders){
+            Class<?> clazz = loader.loadClass(name);
+            if(clazz != null){
+                return clazz;
+            }
+        }
+        return null;
+    }
+
     @Override
     protected URL findResource(String name) {
-        URL result = super.getResource(name);
+        URL result = super.findResource(name);
         if(result != null){
             return result;
         }
@@ -54,13 +73,18 @@ public class PluginClassLoader extends ClassLoader{
 
     @SuppressWarnings("unused")
     @Override
-    protected Enumeration<URL> findResources(String resName) throws IOException {
-        Enumeration<URL> results = super.getResources(resName);
+    protected Enumeration<URL> findResources(String resName)  {
+        Enumeration<URL> results = null;
+        results = super.findResources(resName);
         if(results != null&&results.hasMoreElements()){
             return results;
         }
         for(ClassLoader loader:otherLoaders){
-            results = loader.getResources(resName);
+            try {
+                results = loader.getResources(resName);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             if(results != null&&results.hasMoreElements()){
                 return results;
             }
@@ -69,19 +93,9 @@ public class PluginClassLoader extends ClassLoader{
     }
 
     @Override
-    public URL getResource(String resName) {
-        return findResource(resName);
-    }
-
-    @Override
     public Class<?> loadClass(String className)
             throws ClassNotFoundException {
         Class<?> clazz = super.loadClass(className);
         return clazz;
-    }
-
-    @Override
-    public Enumeration<URL> getResources(String resName) throws IOException {
-        return findResources(resName);
     }
 }

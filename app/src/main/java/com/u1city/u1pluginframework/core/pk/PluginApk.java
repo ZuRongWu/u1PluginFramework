@@ -36,6 +36,7 @@ public class PluginApk {
         if(dependended == null){
             dependended = new ArrayList<>(3);
         }
+        dependended.add(pluginName);
     }
 
     public List<String> getDependended(){

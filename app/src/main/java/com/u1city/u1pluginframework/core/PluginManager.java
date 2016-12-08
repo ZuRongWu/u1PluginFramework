@@ -1,8 +1,10 @@
 package com.u1city.u1pluginframework.core;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.util.Log;
 
 import com.u1city.u1pluginframework.core.activity.host.BaseHostChoosePolicy;
 import com.u1city.u1pluginframework.core.activity.host.HostActivity;
@@ -19,6 +21,7 @@ import java.net.URL;
  * Created by wuzr on 2016/12/2.
  */
 public class PluginManager {
+    private static final String TAG = "PluginManager";
     private static PluginManager sPluginManager;
     private PackageManager packageManager;
     private Context context;
@@ -42,6 +45,23 @@ public class PluginManager {
     }
 
     /**
+     * 加载已经安装的插件，应该在{@link Application#onCreate()}中调用
+     */
+    public void init() throws Exception{
+        File baseDir = new File(packageManager.getPluginBaseDir());
+        if(!baseDir.exists()){
+            return;
+        }
+        for(File plugin:baseDir.listFiles()){
+            String pluginPath = plugin.getAbsolutePath();
+            if(pluginPath.endsWith(".apk")){
+                Log.d(TAG,pluginPath);
+                packageManager.installPlugin(pluginPath,false);
+            }
+        }
+    }
+
+    /**
      * 安装插件，首先检查插件包是否存在以及各式是否正确，只接收.apk;.zip;.jar各式的文件
      * 建议不要在ui线程运行此方法，因为在安装依赖包时可能要下载依赖包
      * @param pluginPath 插件对应的绝对路径
@@ -49,7 +69,7 @@ public class PluginManager {
      */
     public void installPlugin(String pluginPath) throws Exception{
         if(checkPluginPath(pluginPath)){
-            packageManager.installPlugin(pluginPath);
+            packageManager.installPlugin(pluginPath,true);
         }else{
             throw new IllegalArgumentException(pluginPath + "指定的插件不存在或者格式不正确");
         }

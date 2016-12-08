@@ -18,6 +18,16 @@ public class PluginIntent extends Intent{
     private Uri pluginData;
     private int pluginFlag;
 
+    public Class<?> getPluginComponentClazz() {
+        return pluginComponentClazz;
+    }
+
+    public void setPluginComponentClazz(Class<?> pluginComponentClazz) {
+        this.pluginComponentClazz = pluginComponentClazz;
+    }
+
+    private Class<?> pluginComponentClazz;
+
     public void addPluginFlag(int flag){
         pluginFlag |= flag;
     }
