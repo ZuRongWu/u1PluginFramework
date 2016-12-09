@@ -28,17 +28,18 @@ import com.u1city.u1pluginframework.core.pk.PluginApk;
  * 或者是引发异常，应该避免使用。当以正常模式启动activity时，开发者仍可使用activity的API
  * Created by user on 2016/12/2.
  */
-public class PluginActivity extends Activity implements IPlugin{
+public class PluginActivity extends Activity implements IPlugin {
     public static final String KEY_PLUGIN_ACTIVITY_INFO = "key_plugin_activityInfo";
     public static final String KEY_PLUGIN_NAME = "key_plugin_name";
     private static final String TAG = "PluginActivity";
 
     protected HostActivity host;
     private PluginApk apk;
+
     @Override
     public void onPluginCreate(Bundle savedInstanceState) {
         host.onSuperCreate(savedInstanceState);
-        Log.d(TAG,"======onPluginCreate======");
+        Log.d(TAG, "======onPluginCreate======");
     }
 
     @Override
@@ -88,7 +89,7 @@ public class PluginActivity extends Activity implements IPlugin{
 
     @Override
     public boolean onPluginCreateThumbnail(Bitmap outBitmap, Canvas canvas) {
-        return host.onSuperCreateThumbnail(outBitmap,canvas);
+        return host.onSuperCreateThumbnail(outBitmap, canvas);
     }
 
     @Override
@@ -128,22 +129,22 @@ public class PluginActivity extends Activity implements IPlugin{
 
     @Override
     public boolean onPluginKeyDown(int keyCode, KeyEvent event) {
-        return host.onSuperKeyDown(keyCode,event);
+        return host.onSuperKeyDown(keyCode, event);
     }
 
     @Override
     public boolean onPluginKeyLongPress(int keyCode, KeyEvent event) {
-        return host.onSuperKeyLongPress(keyCode,event);
+        return host.onSuperKeyLongPress(keyCode, event);
     }
 
     @Override
     public boolean onPluginKeyUp(int keyCode, KeyEvent event) {
-        return host.onSuperKeyUp(keyCode,event);
+        return host.onSuperKeyUp(keyCode, event);
     }
 
     @Override
     public boolean onPluginKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
-        return host.onSuperKeyMultiple(keyCode,repeatCount,event);
+        return host.onSuperKeyMultiple(keyCode, repeatCount, event);
     }
 
     @Override
@@ -243,7 +244,7 @@ public class PluginActivity extends Activity implements IPlugin{
 
     @Override
     public void onPluginTitleChanged(CharSequence title, int color) {
-        host.onSuperTitleChanged(title,color);
+        host.onSuperTitleChanged(title, color);
     }
 
     @Override
@@ -313,12 +314,12 @@ public class PluginActivity extends Activity implements IPlugin{
 
     @Override
     public void startPluginActivity(PluginIntent intent) {
-        startPluginActivityForResult(intent,0);
+        startPluginActivityForResult(intent, 0);
     }
 
     @Override
     public void startPluginActivityForResult(PluginIntent intent, int requestCode) {
-        host.startActivityForResult(intent,requestCode);
+        host.startActivityForResult(intent, requestCode);
     }
 
     @Override

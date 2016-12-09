@@ -20,7 +20,7 @@ public class MainActivity extends Activity {
     public void installPlugin(View view) {
         try {
             pluginManager.installPlugin("mnt/sdcard/plugin/app-debug_1.apk");
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -29,13 +29,13 @@ public class MainActivity extends Activity {
         PluginIntent intent = new PluginIntent();
         intent.setPluginCompnentName("com.u1city.u1pluginexample2.MainActivity");
         intent.setPluginName("com.u1city.u1pluginexample2");
-        pluginManager.startPluginActivityForResult(this,intent,0);
+        pluginManager.startPluginActivityForResult(this, intent, 0);
     }
 
     public void uninstallPlugin(View view) {
-        try{
+        try {
             pluginManager.uninstallPlugin("com.u1city.u1pluginexample");
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

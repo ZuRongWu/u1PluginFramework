@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class PluginApk {
 
-    public static class Dependency{
+    public static class Dependency {
         public String name;
         public String path;
     }
@@ -28,18 +28,18 @@ public class PluginApk {
     private String resDir;
     private String apkPath;
     private List<Dependency> dependencies;
-    private Map<String,Resources> otherResources = new HashMap<>(3);
+    private Map<String, Resources> otherResources = new HashMap<>(3);
     //依赖此插件的插件名称
     private List<String> dependended;
 
-    public void addDepended(String pluginName){
-        if(dependended == null){
+    public void addDepended(String pluginName) {
+        if (dependended == null) {
             dependended = new ArrayList<>(3);
         }
         dependended.add(pluginName);
     }
 
-    public List<String> getDependended(){
+    public List<String> getDependended() {
         return dependended;
     }
 
@@ -116,11 +116,11 @@ public class PluginApk {
         this.pluginName = pluginName;
     }
 
-    public Resources getResources(String pluginName){
+    public Resources getResources(String pluginName) {
         return otherResources.get(pluginName);
     }
 
-    public void addResources(String pluginName,Resources resources){
-        otherResources.put(pluginName,resources);
+    public void addResources(String pluginName, Resources resources) {
+        otherResources.put(pluginName, resources);
     }
 }

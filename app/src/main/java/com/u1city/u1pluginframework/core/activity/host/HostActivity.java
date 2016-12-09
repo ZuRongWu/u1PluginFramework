@@ -722,15 +722,15 @@ public class HostActivity extends Activity {
     @Override
     public void startActivityForResult(Intent intent, int requestCode) {
         if (plugin != null) {
-            if(intent instanceof PluginIntent){ //启动一个pluginactivity
+            if (intent instanceof PluginIntent) { //启动一个pluginactivity
                 PluginIntent pluginIntent = (PluginIntent) intent;
-                if(pluginIntent.hasFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY)){
-                    super.startActivityForResult(pluginIntent,requestCode);
-                }else{
+                if (pluginIntent.hasFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY)) {
+                    super.startActivityForResult(pluginIntent, requestCode);
+                } else {
                     PluginManager.getInstance(getApplicationContext()).startPluginActivityForResult(this, pluginIntent, requestCode);
                 }
-            }else{ //启动正常activity
-                super.startActivityForResult(intent,requestCode);
+            } else { //启动正常activity
+                super.startActivityForResult(intent, requestCode);
             }
         } else {
             super.startActivityForResult(intent, requestCode);

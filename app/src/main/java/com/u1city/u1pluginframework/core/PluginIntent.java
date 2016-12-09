@@ -7,7 +7,7 @@ import android.net.Uri;
  * plugin intent
  * Created by wuzr on 2016/12/2.
  */
-public class PluginIntent extends Intent{
+public class PluginIntent extends Intent {
     public static final int FLAG_LAUNCH_PLUGIN = 1;
     public static final int FLAG_LAUNCH_ACTUAL_ACTIVITY = 2;
     //默认为插件apk的文件名
@@ -28,12 +28,12 @@ public class PluginIntent extends Intent{
 
     private Class<?> pluginComponentClazz;
 
-    public void addPluginFlag(int flag){
+    public void addPluginFlag(int flag) {
         pluginFlag |= flag;
     }
 
-    public boolean hasFlag(int flag){
-        return (pluginFlag&flag) != 0;
+    public boolean hasFlag(int flag) {
+        return (pluginFlag & flag) != 0;
     }
 
     public void setPluginAction(String pluginAction) {

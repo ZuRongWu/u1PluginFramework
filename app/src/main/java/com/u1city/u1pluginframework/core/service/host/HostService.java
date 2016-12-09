@@ -9,7 +9,7 @@ import android.support.annotation.Nullable;
  * host service
  * Created by wuzr on 2016/12/2.
  */
-public class HostService extends Service{
+public class HostService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

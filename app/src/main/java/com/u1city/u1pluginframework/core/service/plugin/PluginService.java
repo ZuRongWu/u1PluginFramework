@@ -9,7 +9,7 @@ import android.support.annotation.Nullable;
  * plugin service
  * Created by wuzr on 2016/12/2.
  */
-public class PluginService extends Service{
+public class PluginService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

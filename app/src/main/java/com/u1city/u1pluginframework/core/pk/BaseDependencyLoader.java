@@ -13,26 +13,27 @@ import java.util.List;
  * 加载依赖plugin
  * Created by wuzr on 2016/12/6.
  */
-public class BaseDependencyLoader implements DependencyLoader{
+public class BaseDependencyLoader implements DependencyLoader {
     private static final String TAG = "DependencyLoader";
+
     @Override
-    public void load(Context context,PluginApk apk) {
+    public void load(Context context, PluginApk apk) {
         List<PluginApk.Dependency> dependencies = apk.getDependencies();
-        if(dependencies == null||dependencies.size()==0){
-            Log.i(TAG,"没有依赖");
+        if (dependencies == null || dependencies.size() == 0) {
+            Log.i(TAG, "没有依赖");
             return;
         }
-        for(PluginApk.Dependency dependency:dependencies){
+        for (PluginApk.Dependency dependency : dependencies) {
             Log.i(TAG, "开始加载依赖：" + dependency.name);
             PluginManager pluginManager = PluginManager.getInstance(context);
-            if(dependency.path.startsWith("http://")||dependency.path.startsWith("https://")){
+            if (dependency.path.startsWith("http://") || dependency.path.startsWith("https://")) {
                 try {
                     pluginManager.installPlugin(new URL(dependency.path));
                 } catch (MalformedURLException e) {
-                    Log.e(TAG,"插件路径不正确：" + dependency.path);
-                    Log.e(TAG,e.getMessage());
+                    Log.e(TAG, "插件路径不正确：" + dependency.path);
+                    Log.e(TAG, e.getMessage());
                 }
-            }else{
+            } else {
                 try {
                     pluginManager.installPlugin(dependency.path);
                 } catch (Exception e) {

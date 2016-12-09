@@ -12,17 +12,18 @@ import dalvik.system.DexClassLoader;
  * 插件类加载器,查找的顺序是：本插件对应的代码->依次查找它依赖的插件的代码
  * Created by wuzr on 2016/12/6.
  */
-public class PluginClassLoader extends DexClassLoader{
+public class PluginClassLoader extends DexClassLoader {
 
     //依赖的插件的classLoader
     private List<ClassLoader> otherLoaders;
 
     public PluginClassLoader(String dexPath, String optimizedDirectory,
                              String libraryPath, ClassLoader parent) {
-        super(dexPath,optimizedDirectory,libraryPath,parent);
+        super(dexPath, optimizedDirectory, libraryPath, parent);
     }
-    public void addOtherLoader(ClassLoader loader){
-        if(otherLoaders == null){
+
+    public void addOtherLoader(ClassLoader loader) {
+        if (otherLoaders == null) {
             otherLoaders = new ArrayList<>(3);
         }
         otherLoaders.add(loader);
@@ -31,15 +32,15 @@ public class PluginClassLoader extends DexClassLoader{
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         Class<?> clazz = null;
-        try{
+        try {
             clazz = super.findClass(name);
-        }catch (Throwable e){
+        } catch (Throwable e) {
             //do nothing
         }
-        if(clazz == null){
-             clazz = findFromOthers(name);
+        if (clazz == null) {
+            clazz = findFromOthers(name);
         }
-        if(clazz != null){
+        if (clazz != null) {
             return clazz;
         }
         throw new ClassNotFoundException(name);
@@ -47,9 +48,9 @@ public class PluginClassLoader extends DexClassLoader{
 
     //从依赖中查找
     private Class<?> findFromOthers(String name) throws ClassNotFoundException {
-        for(ClassLoader loader:otherLoaders){
+        for (ClassLoader loader : otherLoaders) {
             Class<?> clazz = loader.loadClass(name);
-            if(clazz != null){
+            if (clazz != null) {
                 return clazz;
             }
         }
@@ -59,12 +60,12 @@ public class PluginClassLoader extends DexClassLoader{
     @Override
     protected URL findResource(String name) {
         URL result = super.findResource(name);
-        if(result != null){
+        if (result != null) {
             return result;
         }
-        for (ClassLoader loader:otherLoaders){
+        for (ClassLoader loader : otherLoaders) {
             result = loader.getResource(name);
-            if(result != null){
+            if (result != null) {
                 return result;
             }
         }
@@ -73,19 +74,19 @@ public class PluginClassLoader extends DexClassLoader{
 
     @SuppressWarnings("unused")
     @Override
-    protected Enumeration<URL> findResources(String resName)  {
+    protected Enumeration<URL> findResources(String resName) {
         Enumeration<URL> results = null;
         results = super.findResources(resName);
-        if(results != null&&results.hasMoreElements()){
+        if (results != null && results.hasMoreElements()) {
             return results;
         }
-        for(ClassLoader loader:otherLoaders){
+        for (ClassLoader loader : otherLoaders) {
             try {
                 results = loader.getResources(resName);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(results != null&&results.hasMoreElements()){
+            if (results != null && results.hasMoreElements()) {
                 return results;
             }
         }

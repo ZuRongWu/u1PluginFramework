@@ -7,5 +7,5 @@ import android.content.Context;
  * Created by wuzr on 2016/12/6.
  */
 public interface DependencyLoader {
-    void load(Context context,PluginApk apk);
+    void load(Context context, PluginApk apk);
 }

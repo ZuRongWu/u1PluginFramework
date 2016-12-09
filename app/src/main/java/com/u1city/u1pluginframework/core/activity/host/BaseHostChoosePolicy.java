@@ -8,7 +8,7 @@ import android.content.pm.ActivityInfo;
  */
 public class BaseHostChoosePolicy implements HostChoosePolicy {
     @Override
-    public Class<? extends HostActivity>choose(ActivityInfo ai) {
+    public Class<? extends HostActivity> choose(ActivityInfo ai) {
         return HostActivity.class;
     }
 }
