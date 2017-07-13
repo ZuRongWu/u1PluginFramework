@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class PluginApk {
 
-    public static class Dependency {
+    /*package*/ static class Dependency {
         public String name;
         public String path;
     }

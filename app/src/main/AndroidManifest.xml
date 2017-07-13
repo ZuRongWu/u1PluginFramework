@@ -17,6 +17,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".core.activity.host.HostActivity"/>
+        <activity android:name=".core.activity.host.ExposeHostActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
     </application>
 
 </manifest>

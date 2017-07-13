@@ -2,6 +2,7 @@ package com.u1city.u1pluginframework.core;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Parcel;
 
 /**
  * plugin intent
@@ -9,7 +10,7 @@ import android.net.Uri;
  */
 public class PluginIntent extends Intent {
     public static final int FLAG_LAUNCH_PLUGIN = 1;
-    public static final int FLAG_LAUNCH_ACTUAL_ACTIVITY = 2;
+    public static final int FLAG_LAUNCH_ACTUAL_ACTIVITY = 1<<1;
     //默认为插件apk的文件名
     private String pluginName;
     private String pluginCompnentName;
@@ -74,5 +75,29 @@ public class PluginIntent extends Intent {
 
     public void setPluginType(String pluginType) {
         this.pluginType = pluginType;
+    }
+
+    @Override
+    public void writeToParcel(Parcel out, int flags) {
+        super.writeToParcel(out, flags);
+        out.writeString(pluginName);
+        out.writeString(pluginCompnentName);
+        out.writeString(pluginAction);
+        out.writeString(pluginType);
+        out.writeParcelable(pluginData,0);
+        out.writeInt(pluginFlag);
+        out.writeSerializable(pluginComponentClazz);
+    }
+
+    @Override
+    public void readFromParcel(Parcel in) {
+        super.readFromParcel(in);
+        pluginName = in.readString();
+        pluginCompnentName = in.readString();
+        pluginAction = in.readString();
+        pluginType = in.readString();
+        pluginData = Uri.CREATOR.createFromParcel(in);
+        pluginFlag = in.readInt();
+        pluginComponentClazz = (Class<?>) in.readSerializable();
     }
 }

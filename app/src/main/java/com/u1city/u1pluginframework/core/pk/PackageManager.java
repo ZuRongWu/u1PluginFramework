@@ -20,10 +20,13 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -99,6 +102,7 @@ public class PackageManager {
                 }
             }
         }
+        //没有找到抛出异常
         throw new PluginActivityNotFindException(compnentName);
     }
 
@@ -185,6 +189,7 @@ public class PackageManager {
             for (PluginApk.Dependency dependency : dependencies) {
                 PluginApk dpapk = getPlugin(dependency.name);
                 if (dpapk == null) {
+                    //依赖安装失败，则不安装插件
                     Log.e(TAG, "安装依赖失败：" + dependency.name);
                     return;
                 }
@@ -297,5 +302,17 @@ public class PackageManager {
                 }
             }
         }
+    }
+
+    /**
+     * 返回所有的插件apk
+     */
+    public List<PluginApk> getPlugins(){
+        List<PluginApk> apks = new ArrayList<>();
+        Set<String> keySet = this.pluginsByName.keySet();
+        for (String aKeySet : keySet) {
+            apks.add(pluginsByName.get(aKeySet));
+        }
+        return apks;
     }
 }

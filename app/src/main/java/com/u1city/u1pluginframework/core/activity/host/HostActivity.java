@@ -1,6 +1,5 @@
 package com.u1city.u1pluginframework.core.activity.host;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -10,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -29,10 +29,9 @@ import com.u1city.u1pluginframework.core.pk.PluginApk;
  * host activity
  * Created by user on 2016/12/2.
  */
-public class HostActivity extends Activity {
+public class HostActivity extends FragmentActivity {
     private static final String TAG = "HostActivity";
     private IPlugin plugin;
-    private ActivityInfo pluginInfo;
 
     /**
      * 在此处创建pluginActivity对象
@@ -56,7 +55,6 @@ public class HostActivity extends Activity {
             finish();
             return;
         }
-        this.pluginInfo = ai;
         String acName = ai.name;
         try {
             Class acClazz = apk.getClassLoader().loadClass(acName);
@@ -68,7 +66,7 @@ public class HostActivity extends Activity {
             finish();
         }
         //把activity的theme替换成插件activity的theme
-        onApplyThemeResource(getTheme(), pluginInfo.theme, false);
+        onApplyThemeResource(getTheme(), ai.theme, false);
         if (plugin != null) {
             plugin.onPluginCreate(savedInstanceState);
         } else {
@@ -722,7 +720,7 @@ public class HostActivity extends Activity {
     @Override
     public void startActivityForResult(Intent intent, int requestCode) {
         if (plugin != null) {
-            if (intent instanceof PluginIntent) { //启动一个pluginactivity
+            if ((intent instanceof PluginIntent)&&((PluginIntent)intent).hasFlag(PluginIntent.FLAG_LAUNCH_PLUGIN)) { //启动一个pluginactivity
                 PluginIntent pluginIntent = (PluginIntent) intent;
                 if (pluginIntent.hasFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY)) {
                     super.startActivityForResult(pluginIntent, requestCode);

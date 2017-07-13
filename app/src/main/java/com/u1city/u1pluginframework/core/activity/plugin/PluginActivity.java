@@ -8,6 +8,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -319,6 +320,10 @@ public class PluginActivity extends Activity implements IPlugin {
 
     @Override
     public void startPluginActivityForResult(PluginIntent intent, int requestCode) {
+        if (TextUtils.isEmpty(intent.getPluginCompnentName())&&TextUtils.isEmpty(intent.getPluginName())){
+            //当指定插件的名称和组件的名称时，则是要以插件的形式启动
+            intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_PLUGIN);
+        }
         host.startActivityForResult(intent, requestCode);
     }
 

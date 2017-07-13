@@ -40,7 +40,7 @@ public class PluginManager {
     }
 
     private PluginManager(Context context) {
-        this.context = context;
+        this.context = context.getApplicationContext();
         packageManager = PackageManager.getInstance(this.context);
         hostChoosePolicy = new BaseHostChoosePolicy();
     }
@@ -65,18 +65,24 @@ public class PluginManager {
     /**
      * 安装插件，首先检查插件包是否存在以及各式是否正确，只接收.apk;.zip;.jar各式的文件
      * 建议不要在ui线程运行此方法，因为在安装依赖包时可能要下载依赖包
-     *
      * @param pluginPath 插件对应的绝对路径
-     * @throws Exception
      */
-    public void installPlugin(String pluginPath) throws Exception {
+    public void installPlugin(String pluginPath) {
         if (checkPluginPath(pluginPath)) {
-            packageManager.installPlugin(pluginPath, true);
+            try {
+                packageManager.installPlugin(pluginPath, true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } else {
             throw new IllegalArgumentException(pluginPath + "指定的插件不存在或者格式不正确");
         }
     }
 
+    /**
+     * 卸载指定插件
+     * @param pluginName 指定要卸载的插件
+     */
     public void uninstallPlugin(String pluginName) {
         if (pluginName == null || pluginName.equals("")) {
             throw new IllegalArgumentException("插件名称不能为空");
@@ -84,14 +90,26 @@ public class PluginManager {
         packageManager.uninstallPlugin(pluginName);
     }
 
-    public void updatePlugin(String pluginPath) throws Exception {
+    /**
+     * 更新指定的插件
+     * @param pluginPath  更新包的路径
+     */
+    public void updatePlugin(String pluginPath){
         if (checkPluginPath(pluginPath)) {
-            packageManager.updatePlugin(pluginPath);
+            try {
+                packageManager.updatePlugin(pluginPath);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } else {
             throw new IllegalArgumentException(pluginPath + "指定的插件不存在或者格式不正确");
         }
     }
 
+    /**
+     * 从远程下载插件并安装，耗时过程，不能放在主线程运行
+     * @param url 远程的url
+     */
     public void installPlugin(URL url) {
 
     }
@@ -102,6 +120,10 @@ public class PluginManager {
             String compnentName = intent.getPluginCompnentName();
             if (pluginName == null || pluginName.equals("") || compnentName == null || compnentName.equals("")) {
                 throw new PluginActivityNotFindException(compnentName);
+            }
+            //以“.”开头是相对路径
+            if(compnentName.startsWith(".")){
+                compnentName = pluginName + compnentName;
             }
             PluginApk apk = packageManager.getPlugin(pluginName);
             if (apk == null) {
