@@ -1,18 +1,25 @@
 package com.u1city.u1pluginframework.core.pk;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.PluginManager;
 import com.u1city.u1pluginframework.core.error.PluginActivityNotFindException;
 import com.u1city.u1pluginframework.core.error.UpLevelException;
+import com.u1city.u1pluginframework.utils.ReflectUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,7 +30,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,31 +85,121 @@ public class PackageManager {
         return pluginBaseDir;
     }
 
-    public ActivityInfo findPluginActivity(String compnentName, PluginApk apk) throws PluginActivityNotFindException {
-        //暂时不支持隐式启动
-        //首先在本插件中查找
-        for (ActivityInfo ai : apk.getPackageInfo().activities) {
-            if (ai.name.equals(compnentName)) {
-                return ai;
-            }
-        }
-        //如果没找到在它所依赖的插件中查找
-        List<PluginApk.Dependency> dependencies = apk.getDependencies();
-        if (dependencies != null) {
-            for (PluginApk.Dependency dependency : dependencies) {
-                PluginApk dpapk = getPlugin(dependency.name);
-                if (dpapk != null) {
-                    //正常情况应该一定可以执行到这里
-                    for (ActivityInfo ai : dpapk.getPackageInfo().activities) {
-                        if (ai.name.equals(compnentName)) {
-                            return ai;
+    /**
+     * 从插件中查找activity
+     * @param intent intent
+     * @return 匹配的activityInfo数组
+     * @throws PluginActivityNotFindException 没有找到匹配的activity时抛出异常
+     */
+    public List<ActivityInfo> findPluginActivity(Intent intent) throws PluginActivityNotFindException {
+        List<ActivityInfo> activityInfos = new ArrayList<>();
+        if (intent instanceof PluginIntent){
+            PluginIntent pIntent = (PluginIntent)intent;
+            String pluginName = pIntent.getPluginName();
+            String componentName = pIntent.getPluginComponentName();
+            //处理显式启动
+            if(!TextUtils.isEmpty(pluginName)&&!TextUtils.isEmpty(componentName)){
+                //如果pluginName和componentName都不为空则是显式启动
+                if(componentName.startsWith(".")){
+                    componentName = pluginName + componentName;
+                }
+                PluginApk apk = getPlugin(pluginName);
+                if(apk == null){
+                    throw new PluginActivityNotFindException(String.format("没有找到匹配的activity，pluginName：%s；componentName：%s",pluginName,componentName));
+                }
+                List<PluginApk.Activity> activities = apk.getPluginActivities();
+                for(PluginApk.Activity activity:activities){
+                    if(activity.className.equals(componentName)){
+                        activityInfos.add(activity.activityInfo);
+                        return activityInfos;
+                    }
+                }
+                //如果没找到，从依赖中查找
+                List<PluginApk.Dependency> dependencies = apk.getDependencies();
+                if (dependencies != null) {
+                    for (PluginApk.Dependency dependency : dependencies) {
+                        PluginApk dpapk = getPlugin(dependency.name);
+                        if (dpapk != null) {
+                            //正常情况应该一定可以执行到这里
+                            for (PluginApk.Activity activity : dpapk.getPluginActivities()) {
+                                if (activity.className.equals(componentName)) {
+                                    activityInfos.add(activity.activityInfo);
+                                    return activityInfos;
+                                }
+                            }
                         }
                     }
                 }
+                throw new PluginActivityNotFindException(String.format("没有找到匹配的activity，pluginName：%s；componentName：%s",pluginName,componentName));
+            }
+            //处理隐式启动
+            if(!TextUtils.isEmpty(componentName)){
+                //pluginName为空componentName不为空时，从所有插件中查找与componentName匹配的activity
+                List<PluginApk> apks = getPlugins();
+                for(PluginApk apk:apks){
+                    for(PluginApk.Activity activity:apk.getPluginActivities()){
+                        if(activity.className.equals(componentName)){
+                            activityInfos.add(activity.activityInfo);
+                        }
+                    }
+                }
+                if(activityInfos.size() > 0){
+                    return activityInfos;
+                }
+                throw new PluginActivityNotFindException(String.format("没有找到匹配的activity，componentName：%s",componentName));
+            }
+            if(!TextUtils.isEmpty(pluginName)){
+                //pluginName不为空componentName为空时，从指定的插件apk中查找activity
+                PluginApk apk = getPlugin(pluginName);
+                if(apk == null){
+                    throw new PluginActivityNotFindException(String.format("没有找到匹配的activity，pluginName：%s",pluginName));
+                }
+                activityInfos.addAll(resolveActivity(intent,apk));
+                if(activityInfos.size() > 0){
+                    return activityInfos;
+                }
+                throw new PluginActivityNotFindException(String.format("没有找到匹配的activity，pluginName：%s",pluginName));
             }
         }
-        //没有找到抛出异常
-        throw new PluginActivityNotFindException(compnentName);
+        List<PluginApk> apks = getPlugins();
+        for (PluginApk apk:apks){
+            activityInfos.addAll(resolveActivity(intent,apk));
+        }
+        if(activityInfos .size()> 0){
+            return activityInfos;
+        }
+        throw new PluginActivityNotFindException(String.format("没有找到匹配的activity，intent：%s",intent.toString()));
+    }
+
+    /**
+     * 隐式查找，从指定的apk中查找和intent匹配的activity
+     * @param intent intent
+     * @param apk 指定的apk
+     * @return 所有匹配的activity
+     */
+    private List<ActivityInfo> resolveActivity(Intent intent,PluginApk apk){
+        List<ActivityInfo> activityInfos = new ArrayList<>();
+        String action = intent.getAction();
+        String dataType = intent.getType();
+        String scheme = intent.getScheme();
+        Uri data = intent.getData();
+        Set<String> categories = intent.getCategories();
+        if(TextUtils.isEmpty(action)){
+            //如果action为空则不再往下找
+            return activityInfos;
+        }
+        for(PluginApk.Activity activity:apk.getPluginActivities()){
+            for(IntentFilter filter:activity.intents){
+                int res = filter.match(action,dataType,scheme,data,categories,TAG);
+                if ((res&IntentFilter.NO_MATCH_ACTION )== 0&&
+                        (res&IntentFilter.NO_MATCH_CATEGORY) == 0&&
+                        (res&IntentFilter.NO_MATCH_DATA) == 0){
+                    activityInfos.add(activity.activityInfo);
+                    break;
+                }
+            }
+        }
+        return activityInfos;
     }
 
     public ServiceInfo findPluginService(PluginIntent intent) {
@@ -114,15 +210,16 @@ public class PackageManager {
      * 安装插件,供内部调用，外部应该调用{@link com.u1city.u1pluginframework.core.PluginManager#installPlugin(String)}
      *
      * @param pluginPath 插件包的绝对路径
-     * @throws Exception
      */
     public void installPlugin(String pluginPath, boolean shouldCopy) throws Exception {
         PluginApk apk = new PluginApk();
-        android.content.pm.PackageManager pm = context.getPackageManager();
-        PackageInfo packageInfo = pm.getPackageArchiveInfo(pluginPath,
-                android.content.pm.PackageManager.GET_ACTIVITIES | android.content.pm.PackageManager.GET_SERVICES);
-        apk.setPackageInfo(packageInfo);
-        apk.setPluginName(packageInfo.packageName);
+        apk.setPackageManager(this);
+        PluginApk.Package pluginPackage = parsePackage(pluginPath);
+        if(pluginPackage == null){
+            throw new RuntimeException("解析apk失败");
+        }
+        apk.setPluginName(pluginPackage.packageName);
+        apk.setPluginPackage(pluginPackage);
         //检查此插件是否已经安装，如果已经安装则不再安装
         if (pluginsByName.get(apk.getPluginName()) != null) {
             Log.w(TAG, "插件" + pluginPath + "已安装");
@@ -194,7 +291,6 @@ public class PackageManager {
                     return;
                 }
                 dpapk.addDepended(apk.getPluginName());
-                apk.addResources(dpapk.getPluginName(), dpapk.getResources());
                 classLoader.addOtherLoader(dpapk.getClassLoader());
             }
         }
@@ -203,12 +299,15 @@ public class PackageManager {
         pluginsByName.put(apk.getPluginName(), apk);
     }
 
+    public void unInstallPlugin(String pluginName){
+        unInstallPlugin(pluginName,false);
+    }
+
     /**
      * 卸载插件
-     *
      * @param pluginName 指定要卸载的插件
      */
-    public void uninstallPlugin(String pluginName) {
+    public void unInstallPlugin(String pluginName, boolean isUpdate) {
         //检查是否安装过pluginName指定的插件，如果没有安装则直接返回
         if (pluginsByName.get(pluginName) == null) {
             Log.w(TAG, "没有安装此插件");
@@ -217,7 +316,7 @@ public class PackageManager {
 
         PluginApk apk = pluginsByName.get(pluginName);
         //检查是否有插件依赖此插件
-        if (apk.getDependended() != null && apk.getDependended().size() > 0) {
+        if (apk.getDependended() != null && apk.getDependended().size() > 0&&!isUpdate) {
             String logMsg = "不可以卸载插件，有插件依赖此插件：";
             for (String dName : apk.getDependended()) {
                 logMsg = logMsg + "[" + dName + "]";
@@ -244,7 +343,7 @@ public class PackageManager {
         //卸载插件apk依赖的插件
         if (apk.getDependencies() != null && apk.getDependencies().size() > 0) {
             for (PluginApk.Dependency dependency : apk.getDependencies()) {
-                PluginManager.getInstance(context).uninstallPlugin(dependency.name);
+                PluginManager.getInstance(context).unInstallPlugin(dependency.name);
             }
         }
     }
@@ -258,19 +357,20 @@ public class PackageManager {
      * @param newPlugin 新插件的绝对路径
      */
     public void updatePlugin(String newPlugin) throws Exception {
-        android.content.pm.PackageManager pm = context.getPackageManager();
-        PackageInfo packageInfo = pm.getPackageArchiveInfo(newPlugin,
-                android.content.pm.PackageManager.GET_ACTIVITIES | android.content.pm.PackageManager.GET_SERVICES);
-        if (!pluginsByName.containsKey(packageInfo.packageName)) {
+        PluginApk.Package newPackage = parsePackage(newPlugin);
+        if(newPackage == null){
+            throw new RuntimeException("解析apk失败： " + newPlugin);
+        }
+        if (!pluginsByName.containsKey(newPackage.packageName)) {
             installPlugin(newPlugin, true);
             return;
         }
-        int newVersion = packageInfo.versionCode;
-        int oldVersion = pluginsByName.get(packageInfo.packageName).getPackageInfo().versionCode;
+        int newVersion = newPackage.versionCode;
+        int oldVersion = pluginsByName.get(newPackage.packageName).getVersionCode();
         if (newVersion <= oldVersion) {
             throw new UpLevelException();
         }
-        uninstallPlugin(packageInfo.packageName);
+        this.unInstallPlugin(newPackage.packageName,true);
         installPlugin(newPlugin, true);
     }
 
@@ -314,5 +414,107 @@ public class PackageManager {
             apks.add(pluginsByName.get(aKeySet));
         }
         return apks;
+    }
+
+    /**
+     * 通过PackageParser利用反射来解析apk，生成{@link com.u1city.u1pluginframework.core.pk.PluginApk.Package}对象
+     * @param path apk对应的路径
+     * @return package对象
+     */
+    public PluginApk.Package parsePackage(String path){
+        try {
+            File apkFile = new File(path);
+            Class<?> parserClazz = Class.forName("android.content.pm.PackageParser");
+            Constructor<?> constructor = parserClazz.getConstructor();
+            constructor.setAccessible(true);
+            Object parser = constructor.newInstance();
+            Method method = parserClazz.getDeclaredMethod("parseMonolithicPackage",File.class,int.class);
+            method.setAccessible(true);
+            Object rawPkg = method.invoke(parser,apkFile,0);
+            if(rawPkg != null){
+                PluginApk.Package pluginPkg = new PluginApk.Package();
+                pluginPkg.packageName = (String) ReflectUtils.readField("packageName",rawPkg);
+                pluginPkg.baseHardwareAccelerated = (boolean) ReflectUtils.readField("baseHardwareAccelerated",rawPkg);
+                pluginPkg.applicationInfo = (ApplicationInfo) ReflectUtils.readField("applicationInfo",rawPkg);
+                pluginPkg.versionCode = (int) ReflectUtils.readField("mVersionCode",rawPkg);
+                pluginPkg.versionName = (String) ReflectUtils.readField("mVersionName",rawPkg);
+                ArrayList rawActivities = (ArrayList) ReflectUtils.readField("activities",rawPkg);
+                //获取activities
+                if(rawActivities != null){
+                    for(Object obj:rawActivities){
+                        PluginApk.Activity activity = new PluginApk.Activity();
+                        activity.activityInfo = (ActivityInfo) ReflectUtils.readField("info",obj);
+                        activity.owner = pluginPkg;
+                        activity.className = (String) ReflectUtils.readField("className",obj);
+                        activity.metaData = (Bundle) ReflectUtils.readField("metaData",obj);
+                        ArrayList intents = (ArrayList) ReflectUtils.readField("intents",obj);
+                        if(intents != null){
+                            for(Object in:intents){
+                                activity.intents.add((IntentFilter) in);
+                            }
+                        }
+                        pluginPkg.activities.add(activity);
+                    }
+                }
+                //获取services
+                ArrayList rawServices = (ArrayList) ReflectUtils.readField("services",rawPkg);
+                if(rawServices != null){
+                    for(Object obj:rawServices){
+                        PluginApk.Service service = new PluginApk.Service();
+                        service.serviceInfo = (ServiceInfo) ReflectUtils.readField("info",obj);
+                        service.owner = pluginPkg;
+                        service.className = (String) ReflectUtils.readField("className",obj);
+                        service.metaData = (Bundle) ReflectUtils.readField("metaData",obj);
+                        ArrayList intents = (ArrayList) ReflectUtils.readField("intents",obj);
+                        if(intents != null){
+                            for(Object in:intents){
+                                service.intents.add((IntentFilter) in);
+                            }
+                        }
+                        pluginPkg.services.add(service);
+                    }
+                }
+                //获取receivers
+                ArrayList rawReceivers = (ArrayList) ReflectUtils.readField("receivers",rawPkg);
+                if(rawReceivers != null){
+                    for(Object obj:rawReceivers){
+                        PluginApk.Activity reciver = new PluginApk.Activity();
+                        reciver.activityInfo = (ActivityInfo) ReflectUtils.readField("info",obj);
+                        reciver.owner = pluginPkg;
+                        reciver.className = (String) ReflectUtils.readField("className",obj);
+                        reciver.metaData = (Bundle) ReflectUtils.readField("metaData",obj);
+                        ArrayList intents = (ArrayList) ReflectUtils.readField("intents",obj);
+                        if(intents != null){
+                            for(Object in:intents){
+                                reciver.intents.add((IntentFilter) in);
+                            }
+                        }
+                        pluginPkg.receivers.add(reciver);
+                    }
+                }
+                //获取provider
+                ArrayList rawProviders = (ArrayList) ReflectUtils.readField("providers",rawPkg);
+                if(rawProviders != null){
+                    for(Object obj:rawProviders){
+                        PluginApk.Provider provider = new PluginApk.Provider();
+                        provider.providerInfo = (ProviderInfo) ReflectUtils.readField("info",obj);
+                        provider.owner = pluginPkg;
+                        provider.className = (String) ReflectUtils.readField("className",obj);
+                        provider.metaData = (Bundle) ReflectUtils.readField("metaData",obj);
+                        ArrayList intents = (ArrayList) ReflectUtils.readField("intents",obj);
+                        if(intents != null){
+                            for(Object in:intents){
+                                provider.intents.add((IntentFilter) in);
+                            }
+                        }
+                        pluginPkg.providers.add(provider);
+                    }
+                }
+                return pluginPkg;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

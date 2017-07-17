@@ -18,7 +18,7 @@ import java.util.List;
  * <dependencies>
  * <item name="">
  * <path>http:</path>
- * <item/>
+ * </item>
  * .
  * .
  * .

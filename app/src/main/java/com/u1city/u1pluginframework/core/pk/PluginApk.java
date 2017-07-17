@@ -1,12 +1,16 @@
 package com.u1city.u1pluginframework.core.pk;
 
-import android.content.pm.PackageInfo;
+import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.ProviderInfo;
+import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
+import android.os.Bundle;
+import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * plugin apk
@@ -19,7 +23,41 @@ public class PluginApk {
         public String path;
     }
 
-    private PackageInfo packageInfo;
+    public static class Package{
+        public String packageName;
+        public boolean baseHardwareAccelerated;
+        public ApplicationInfo applicationInfo;
+        public int versionCode;
+        public String versionName;
+        public final ArrayList<Activity> activities = new ArrayList<>(0);
+        public final ArrayList<Activity> receivers = new ArrayList<>(0);
+        public final ArrayList<Provider> providers = new ArrayList<>(0);
+        public final ArrayList<Service> services = new ArrayList<>(0);
+    }
+
+    public static class Service extends Component<IntentFilter>{
+        public ServiceInfo serviceInfo;
+    }
+
+    public static class Provider extends Component<IntentFilter>{
+        public ProviderInfo providerInfo;
+    }
+
+    public static class Activity extends Component<IntentFilter>{
+        public ActivityInfo activityInfo;
+    }
+
+    public static class Component<II extends IntentFilter>{
+        public Package owner;
+        public List<II> intents = new ArrayList<>();
+        public String className;
+        public Bundle metaData;
+    }
+
+    private static final String TAG = "PluginApk";
+
+    private PackageManager packageManager;
+    private Package pluginPackage;
     private String pluginName;
     private Resources resources;
     private ClassLoader classLoader;
@@ -28,9 +66,68 @@ public class PluginApk {
     private String resDir;
     private String apkPath;
     private List<Dependency> dependencies;
-    private Map<String, Resources> otherResources = new HashMap<>(3);
     //依赖此插件的插件名称
     private List<String> dependended;
+
+    /**
+     * @return 插件包包名
+     */
+    public String getPackageName(){
+        return pluginPackage.packageName;
+    }
+
+    /**
+     * @return 插件包所有的activity信息
+     */
+    public List<Activity> getPluginActivities(){
+        return pluginPackage.activities;
+    }
+
+    /**
+     * @return 插件包所有的service信息
+     */
+    public List<Service> getPluginServices(){
+        return pluginPackage.services;
+    }
+
+    /**
+     * @return 插件包所有ContentProvider信息
+     */
+    public List<Provider> getPluginProviders(){
+        return pluginPackage.providers;
+    }
+
+    /**
+     * @return 插件包所有的BroadCastReciever信息
+     */
+    public List<Activity> getPluginRecievers(){
+        return pluginPackage.receivers;
+    }
+
+    /**
+     * @return 插件包的versionCode
+     */
+    public int getVersionCode(){
+        return pluginPackage.versionCode;
+    }
+
+    public String getVersionName(){
+        return pluginPackage.versionName;
+    }
+
+    /**
+     * @return 插件包是否开启硬件插件
+     */
+    public boolean baseHardwareAcceleratedEnable(){
+        return pluginPackage.baseHardwareAccelerated;
+    }
+
+    /**
+     * @param pluginPackage 插件包描述信息
+     */
+    public void setPluginPackage(Package pluginPackage) {
+        this.pluginPackage = pluginPackage;
+    }
 
     public void addDepended(String pluginName) {
         if (dependended == null) {
@@ -59,20 +156,12 @@ public class PluginApk {
         return apkPath;
     }
 
-    public void setPackageInfo(PackageInfo packageInfo) {
-        this.packageInfo = packageInfo;
-    }
-
     public void setNativeLibDir(String nativeLibDir) {
         this.nativeLibDir = nativeLibDir;
     }
 
     public String getNativeLibDir() {
         return nativeLibDir;
-    }
-
-    public PackageInfo getPackageInfo() {
-        return packageInfo;
     }
 
     public Resources getResources() {
@@ -112,15 +201,26 @@ public class PluginApk {
         return pluginName;
     }
 
+    public void setPackageManager(PackageManager packageManager){
+        this.packageManager = packageManager;
+    }
+
     public void setPluginName(String pluginName) {
         this.pluginName = pluginName;
     }
 
     public Resources getResources(String pluginName) {
-        return otherResources.get(pluginName);
-    }
-
-    public void addResources(String pluginName, Resources resources) {
-        otherResources.put(pluginName, resources);
+        boolean isFound = false;
+        for(Dependency d:dependencies){
+            if(d.name.equals(pluginName)){
+                isFound = true;
+                break;
+            }
+        }
+        if(!isFound){
+            Log.w(TAG,"没有找到resource");
+            return null;
+        }
+        return packageManager.getPlugin(pluginName).getResources();
     }
 }

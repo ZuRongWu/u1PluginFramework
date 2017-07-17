@@ -320,9 +320,19 @@ public class PluginActivity extends Activity implements IPlugin {
 
     @Override
     public void startPluginActivityForResult(PluginIntent intent, int requestCode) {
-        if (TextUtils.isEmpty(intent.getPluginCompnentName())&&TextUtils.isEmpty(intent.getPluginName())){
+        if (!TextUtils.isEmpty(intent.getPluginComponentName())&&!TextUtils.isEmpty(intent.getPluginName())){
             //当指定插件的名称和组件的名称时，则是要以插件的形式启动
             intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_PLUGIN);
+            if(intent.getPluginComponentName().startsWith(".")){
+                intent.setPluginComponentName(intent.getPluginName() + intent.getPluginComponentName());
+            }
+        }
+        if(TextUtils.isEmpty(intent.getPluginName())){
+            intent.setPluginComponentName(apk.getPluginName() + intent.getPluginComponentName());
+        }
+        if(intent.getPluginComponentClazz() != null){
+            intent.setPluginComponentName(intent.getPluginComponentClazz().getName());
+            intent.setPluginName(apk.getPluginName());
         }
         host.startActivityForResult(intent, requestCode);
     }

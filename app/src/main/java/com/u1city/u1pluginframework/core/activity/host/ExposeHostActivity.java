@@ -3,10 +3,9 @@ package com.u1city.u1pluginframework.core.activity.host;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.text.TextUtils;
 
-import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.activity.plugin.PluginActivity;
+import com.u1city.u1pluginframework.core.error.PluginActivityNotFindException;
 import com.u1city.u1pluginframework.core.pk.PackageManager;
 import com.u1city.u1pluginframework.core.pk.PluginApk;
 
@@ -54,26 +53,17 @@ public class ExposeHostActivity extends HostActivity {
      */
     private List<ActivityDescribe> findPluginActivity(){
         List<ActivityDescribe> results = new ArrayList<>();
-        Intent intent = getIntent();
-        if(intent instanceof PluginIntent){
-            PluginIntent pIntent = (PluginIntent) intent;
-            if(!TextUtils.isEmpty(pIntent.getPluginName())&&!TextUtils.isEmpty(pIntent.getPluginCompnentName())){
+        try {
+            List<ActivityInfo> activityInfos = mPackageManager.findPluginActivity(getIntent());
+            for(ActivityInfo info:activityInfos){
                 ActivityDescribe describe = new ActivityDescribe();
-                describe.apk = mPackageManager.getPlugin(pIntent.getPluginName());
-            }
-        }
-        List<PluginApk> plugins = mPackageManager.getPlugins();
-        for(PluginApk apk:plugins){
-            if(apk == null){
-                continue;
-            }
-            ActivityInfo[] infos = apk.getPackageInfo().activities;
-            for(ActivityInfo info:infos){
-                ActivityDescribe describe = new ActivityDescribe();
-                describe.apk = apk;
+                describe.apk = mPackageManager.getPlugin(info.packageName);
                 describe.activityInfo = info;
-                results.add(describe);
             }
+        } catch (PluginActivityNotFindException e) {
+            e.printStackTrace();
+            //没有找到匹配的activity
+            finish();
         }
         return results;
     }

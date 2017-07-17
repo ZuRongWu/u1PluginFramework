@@ -28,8 +28,9 @@ public class BaseDependencyLoader implements DependencyLoader {
             PluginManager pluginManager = PluginManager.getInstance(context);
             if (dependency.path.startsWith("http://") || dependency.path.startsWith("https://")) {
                 try {
-                    pluginManager.installPlugin(new URL(dependency.path));
-                } catch (MalformedURLException e) {
+                    //同步下载插件并安装
+                    pluginManager.installPluginSync(dependency.path);
+                } catch (Exception e) {
                     Log.e(TAG, "插件路径不正确：" + dependency.path);
                     Log.e(TAG, e.getMessage());
                 }
