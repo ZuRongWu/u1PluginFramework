@@ -1,13 +1,15 @@
-package com.u1city.u1pluginframework.core.activity.plugin;
+package com.u1city.u1pluginframework.core.activity;
 
-import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -19,7 +21,7 @@ import android.view.View;
 import android.view.WindowManager;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
-import com.u1city.u1pluginframework.core.activity.host.HostActivity;
+import com.u1city.u1pluginframework.core.PluginManager;
 import com.u1city.u1pluginframework.core.pk.PluginApk;
 
 /**
@@ -29,13 +31,22 @@ import com.u1city.u1pluginframework.core.pk.PluginApk;
  * 或者是引发异常，应该避免使用。当以正常模式启动activity时，开发者仍可使用activity的API
  * Created by user on 2016/12/2.
  */
-public class PluginActivity extends Activity implements IPlugin {
+public class PluginActivity extends HostActivity implements IPlugin {
     public static final String KEY_PLUGIN_ACTIVITY_INFO = "key_plugin_activityInfo";
     public static final String KEY_PLUGIN_NAME = "key_plugin_name";
     private static final String TAG = "PluginActivity";
 
     protected HostActivity host;
     private PluginApk apk;
+    private boolean devIsOpen;
+
+    public PluginActivity(){
+        devIsOpen = PluginManager.getInstance(this).getDevIsOpen();
+        if(devIsOpen){
+            host = this;
+            host.setPlugin(this);
+        }
+    }
 
     @Override
     public void onPluginCreate(Bundle savedInstanceState) {
@@ -310,6 +321,9 @@ public class PluginActivity extends Activity implements IPlugin {
 
     @Override
     public Resources getPluginResource(String pluginName) {
+        if(devIsOpen){
+            return host.getResources();
+        }
         return apk.getResources(pluginName);
     }
 
@@ -320,21 +334,52 @@ public class PluginActivity extends Activity implements IPlugin {
 
     @Override
     public void startPluginActivityForResult(PluginIntent intent, int requestCode) {
-        if (!TextUtils.isEmpty(intent.getPluginComponentName())&&!TextUtils.isEmpty(intent.getPluginName())){
-            //当指定插件的名称和组件的名称时，则是要以插件的形式启动
-            intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_PLUGIN);
-            if(intent.getPluginComponentName().startsWith(".")){
-                intent.setPluginComponentName(intent.getPluginName() + intent.getPluginComponentName());
+        if(devIsOpen){
+            //开发模式不能启动其他插件的activity
+            String pluginName = intent.getPluginName();
+            if(!TextUtils.isEmpty(pluginName)&&!TextUtils.equals(pluginName,getPackageName())){
+                Log.w(TAG,"开发模式不能启动其他插件的activity");
+                return;
+            }
+            String componentName = intent.getPluginComponentName();
+            if(!TextUtils.isEmpty(componentName)){
+                if(componentName.startsWith(".")){
+                    componentName += getPackageName();
+                }
+                intent.setClassName(this,componentName);
+            }
+        }else{
+            if (!TextUtils.isEmpty(intent.getPluginComponentName())&&!TextUtils.isEmpty(intent.getPluginName())){
+                //当指定插件的名称和组件的名称时，则是要以插件的形式启动
+                intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_PLUGIN);
+                if(intent.getPluginComponentName().startsWith(".")){
+                    intent.setPluginComponentName(intent.getPluginName() + intent.getPluginComponentName());
+                }
+            }
+            if(TextUtils.isEmpty(intent.getPluginName())){
+                intent.setPluginComponentName(apk.getPluginName() + intent.getPluginComponentName());
+            }
+            if(intent.getPluginComponentClazz() != null){
+                intent.setPluginComponentName(intent.getPluginComponentClazz().getName());
+                intent.setPluginName(apk.getPluginName());
             }
         }
-        if(TextUtils.isEmpty(intent.getPluginName())){
-            intent.setPluginComponentName(apk.getPluginName() + intent.getPluginComponentName());
-        }
-        if(intent.getPluginComponentClazz() != null){
-            intent.setPluginComponentName(intent.getPluginComponentClazz().getName());
-            intent.setPluginName(apk.getPluginName());
-        }
         host.startActivityForResult(intent, requestCode);
+    }
+
+    @Override
+    public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
+        return host.registerReceiver(receiver,filter);
+    }
+
+    @Override
+    public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter, String broadcastPermission, Handler scheduler) {
+        return host.registerReceiver(receiver, filter, broadcastPermission, scheduler);
+    }
+
+    @Override
+    public void unregisterReceiver(BroadcastReceiver receiver) {
+        host.unregisterReceiver(receiver);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.activity.plugin;
+package com.u1city.u1pluginframework.core.activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -16,7 +16,7 @@ import android.view.View;
 import android.view.WindowManager;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
-import com.u1city.u1pluginframework.core.activity.host.HostActivity;
+import com.u1city.u1pluginframework.core.activity.HostActivity;
 import com.u1city.u1pluginframework.core.pk.PluginApk;
 
 /**

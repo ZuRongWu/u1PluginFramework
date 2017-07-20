@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.activity.host;
+package com.u1city.u1pluginframework.core.activity;
 
 import android.content.pm.ActivityInfo;
 

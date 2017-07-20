@@ -16,9 +16,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".core.activity.host.HostActivity"/>
-        <activity android:name=".core.activity.host.ExposeHostActivity"
+        <activity android:name=".core.activity.HostActivity"/>
+        <activity android:name=".core.activity.ExposeHostActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+        <activity android:name=".core.activity.ChooseActivityDialog"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+        <receiver android:name=".core.reciever.BroadCastReceiverHost"/>
     </application>
 
 </manifest>

@@ -1,5 +1,6 @@
 package com.u1city.u1pluginframework.core.pk;
 
+import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -8,6 +9,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
@@ -40,7 +42,7 @@ import java.util.zip.ZipFile;
  * package manager
  * Created by wuzr on 2016/12/2.
  */
-public class PackageManager {
+public class PackageManager implements ComponentCallbacks {
     private static final String TAG = "PackageManager";
     private static PackageManager sPackageManager;
 
@@ -68,7 +70,7 @@ public class PackageManager {
 
     private PackageManager(Context context) {
         //单例
-        this.context = context;
+        this.context = context.getApplicationContext();
         pluginBaseDir = context.getFilesDir().getParent() + "/plugin/";
         File f = new File(pluginBaseDir);
         if (!f.exists()) {
@@ -79,6 +81,7 @@ public class PackageManager {
         pluginsByName = new HashMap<>();
         configParser = new BaseConfigParser();
         dependencyLoader = new BaseDependencyLoader();
+        this.context.registerComponentCallbacks(this);
     }
 
     public String getPluginBaseDir() {
@@ -202,6 +205,39 @@ public class PackageManager {
         return activityInfos;
     }
 
+    /**
+     * 查找所有和intent匹配的receiver
+     * @param intent intent
+     * @return 所有与intent匹配的receiver列表
+     */
+    public List<ActivityInfo> findReceivers(Intent intent){
+        List<PluginApk> apks = getPlugins();
+        List<ActivityInfo> receivers = new ArrayList<>();
+        for(PluginApk apk:apks){
+            String action = intent.getAction();
+            String dataType = intent.getType();
+            String scheme = intent.getScheme();
+            Uri data = intent.getData();
+            Set<String> categories = intent.getCategories();
+            if(TextUtils.isEmpty(action)){
+                //如果action为空则不再往下找
+                return receivers;
+            }
+            for(PluginApk.Activity activity:apk.getPluginRecievers()){
+                for(IntentFilter filter:activity.intents){
+                    int res = filter.match(action,dataType,scheme,data,categories,TAG);
+                    if ((res&IntentFilter.NO_MATCH_ACTION )== 0&&
+                            (res&IntentFilter.NO_MATCH_CATEGORY) == 0&&
+                            (res&IntentFilter.NO_MATCH_DATA) == 0){
+                        receivers.add(activity.activityInfo);
+                        break;
+                    }
+                }
+            }
+        }
+        return receivers;
+    }
+
     public ServiceInfo findPluginService(PluginIntent intent) {
         throw new RuntimeException("此方法暂未实现");
     }
@@ -291,7 +327,7 @@ public class PackageManager {
                     return;
                 }
                 dpapk.addDepended(apk.getPluginName());
-                classLoader.addOtherLoader(dpapk.getClassLoader());
+                classLoader.addDependency(dpapk.getPluginName());
             }
         }
         apk.setClassLoader(classLoader);
@@ -372,6 +408,12 @@ public class PackageManager {
         }
         this.unInstallPlugin(newPackage.packageName,true);
         installPlugin(newPlugin, true);
+        //更新依赖它的插件的classLoader
+        List<String> names = getPlugin(newPlugin).getDependended();
+        for(String n:names){
+            PluginApk apk = getPlugin(n);
+            ((PluginClassLoader)apk.getClassLoader()).invalidateDependency(newPlugin);
+        }
     }
 
     public PluginApk getPlugin(String pluginName) {
@@ -516,5 +558,15 @@ public class PackageManager {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration configuration) {
+        //do nothing
+    }
+
+    @Override
+    public void onLowMemory() {
+        //清理缓存
     }
 }

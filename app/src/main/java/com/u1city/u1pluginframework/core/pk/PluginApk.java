@@ -23,7 +23,7 @@ public class PluginApk {
         public String path;
     }
 
-    public static class Package{
+    public static class Package {
         public String packageName;
         public boolean baseHardwareAccelerated;
         public ApplicationInfo applicationInfo;
@@ -35,19 +35,19 @@ public class PluginApk {
         public final ArrayList<Service> services = new ArrayList<>(0);
     }
 
-    public static class Service extends Component<IntentFilter>{
+    public static class Service extends Component<IntentFilter> {
         public ServiceInfo serviceInfo;
     }
 
-    public static class Provider extends Component<IntentFilter>{
+    public static class Provider extends Component<IntentFilter> {
         public ProviderInfo providerInfo;
     }
 
-    public static class Activity extends Component<IntentFilter>{
+    public static class Activity extends Component<IntentFilter> {
         public ActivityInfo activityInfo;
     }
 
-    public static class Component<II extends IntentFilter>{
+    public static class Component<II extends IntentFilter> {
         public Package owner;
         public List<II> intents = new ArrayList<>();
         public String className;
@@ -72,53 +72,57 @@ public class PluginApk {
     /**
      * @return 插件包包名
      */
-    public String getPackageName(){
+    public String getPackageName() {
         return pluginPackage.packageName;
+    }
+
+    public ApplicationInfo getApplicationInfo() {
+        return pluginPackage.applicationInfo;
     }
 
     /**
      * @return 插件包所有的activity信息
      */
-    public List<Activity> getPluginActivities(){
+    public List<Activity> getPluginActivities() {
         return pluginPackage.activities;
     }
 
     /**
      * @return 插件包所有的service信息
      */
-    public List<Service> getPluginServices(){
+    public List<Service> getPluginServices() {
         return pluginPackage.services;
     }
 
     /**
      * @return 插件包所有ContentProvider信息
      */
-    public List<Provider> getPluginProviders(){
+    public List<Provider> getPluginProviders() {
         return pluginPackage.providers;
     }
 
     /**
      * @return 插件包所有的BroadCastReciever信息
      */
-    public List<Activity> getPluginRecievers(){
+    public List<Activity> getPluginRecievers() {
         return pluginPackage.receivers;
     }
 
     /**
      * @return 插件包的versionCode
      */
-    public int getVersionCode(){
+    public int getVersionCode() {
         return pluginPackage.versionCode;
     }
 
-    public String getVersionName(){
+    public String getVersionName() {
         return pluginPackage.versionName;
     }
 
     /**
      * @return 插件包是否开启硬件插件
      */
-    public boolean baseHardwareAcceleratedEnable(){
+    public boolean baseHardwareAcceleratedEnable() {
         return pluginPackage.baseHardwareAccelerated;
     }
 
@@ -201,7 +205,7 @@ public class PluginApk {
         return pluginName;
     }
 
-    public void setPackageManager(PackageManager packageManager){
+    public void setPackageManager(PackageManager packageManager) {
         this.packageManager = packageManager;
     }
 
@@ -211,14 +215,14 @@ public class PluginApk {
 
     public Resources getResources(String pluginName) {
         boolean isFound = false;
-        for(Dependency d:dependencies){
-            if(d.name.equals(pluginName)){
+        for (Dependency d : dependencies) {
+            if (d.name.equals(pluginName)) {
                 isFound = true;
                 break;
             }
         }
-        if(!isFound){
-            Log.w(TAG,"没有找到resource");
+        if (!isFound) {
+            Log.w(TAG, "没有找到resource");
             return null;
         }
         return packageManager.getPlugin(pluginName).getResources();

@@ -2,34 +2,48 @@ package com.u1city.u1pluginframework.core;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.ComponentCallbacks;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+import android.os.Parcelable;
 import android.os.Process;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.u1city.u1pluginframework.core.activity.host.BaseHostChoosePolicy;
-import com.u1city.u1pluginframework.core.activity.host.HostActivity;
-import com.u1city.u1pluginframework.core.activity.host.HostChoosePolicy;
-import com.u1city.u1pluginframework.core.activity.plugin.PluginActivity;
+import com.u1city.u1pluginframework.core.activity.ChooseActivityDialog;
+import com.u1city.u1pluginframework.core.activity.BaseHostChoosePolicy;
+import com.u1city.u1pluginframework.core.activity.HostActivity;
+import com.u1city.u1pluginframework.core.activity.HostChoosePolicy;
+import com.u1city.u1pluginframework.core.activity.PluginActivity;
 import com.u1city.u1pluginframework.core.error.InstallPluginException;
 import com.u1city.u1pluginframework.core.error.UpdatePluginException;
 import com.u1city.u1pluginframework.core.pk.PackageManager;
+import com.u1city.u1pluginframework.core.pk.PluginApk;
+import com.u1city.u1pluginframework.core.reciever.BroadCastReceiverHost;
+import com.u1city.u1pluginframework.core.reciever.BroadCastReceiverPlugin;
 import com.u1city.u1pluginframework.download.DownloadManager;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * plugin manager
  * Created by wuzr on 2016/12/2.
  */
-public class PluginManager {
+public class PluginManager implements ComponentCallbacks {
     private static final String TAG = "PluginManager";
     private static PluginManager sPluginManager;
     private PackageManager packageManager;
     private Context context;
     private HostChoosePolicy hostChoosePolicy;
+    private Map<String, BroadCastReceiverPlugin> receiversById = new HashMap<>();
+    //标识是否处于开发模式，当处于开发模式时，所有的插件apk都可以像正常apk一样，默认关闭
+    private boolean devIsOpen;
 
     public interface URLInstallListener {
         /**
@@ -80,12 +94,29 @@ public class PluginManager {
         this.context = context.getApplicationContext();
         packageManager = PackageManager.getInstance(this.context);
         hostChoosePolicy = new BaseHostChoosePolicy();
+        this.context.registerComponentCallbacks(this);
+    }
+
+    public boolean getDevIsOpen() {
+        return devIsOpen;
+    }
+
+    public void openDevMode() {
+        devIsOpen = true;
+    }
+
+    public void closeDevMode() {
+        devIsOpen = false;
     }
 
     /**
      * 加载已经安装的插件，应该在{@link Application#onCreate()}中调用
      */
     public void init() {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式，不能使用和操作插件");
+            return;
+        }
         File baseDir = new File(packageManager.getPluginBaseDir());
         if (!baseDir.exists()) {
             return;
@@ -112,6 +143,10 @@ public class PluginManager {
      * @param pluginPath 插件对应的绝对路径
      */
     public void installPlugin(String pluginPath) throws InstallPluginException {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式，不能安装插件");
+            return;
+        }
         if (checkPluginPath(pluginPath)) {
             try {
                 packageManager.installPlugin(pluginPath, true);
@@ -130,6 +165,10 @@ public class PluginManager {
      * @param pluginName 指定要卸载的插件
      */
     public void unInstallPlugin(String pluginName) {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式，不能卸载插件");
+            return;
+        }
         if (pluginName == null || pluginName.equals("")) {
             throw new IllegalArgumentException("插件名称不能为空");
         }
@@ -142,6 +181,10 @@ public class PluginManager {
      * @param pluginPath 更新包的路径
      */
     public void updatePlugin(String pluginPath) throws UpdatePluginException {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式，不能更新插件");
+            return;
+        }
         if (checkPluginPath(pluginPath)) {
             try {
                 packageManager.updatePlugin(pluginPath);
@@ -159,7 +202,11 @@ public class PluginManager {
      *
      * @param urlStr 远程的url
      */
-    public void installPluginAsyn(String urlStr, final URLInstallListener listener) {
+    public void installPluginRemote(String urlStr, final URLInstallListener listener) {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式，不能安装插件");
+            return;
+        }
         DownloadManager.getInstance(context).download(urlStr, new DownloadManager.DownloadListener() {
             @Override
             public void onProgress(long total, long done) {
@@ -201,21 +248,29 @@ public class PluginManager {
      * @param url url地址
      * @throws InstallPluginException 安装失败时抛出
      */
-    public void installPluginSync(String url) throws InstallPluginException {
+    public void installPluginRemoteSync(String url) throws InstallPluginException {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式不能安装插件");
+            return;
+        }
         String path = DownloadManager.getInstance(context).downloadSync(url);
         if (TextUtils.isEmpty(path)) {
             //为空时下载失败
-            throw new RuntimeException("下载插件失败：" + url);
+            throw new InstallPluginException("下载插件失败：" + url);
         }
         installPlugin(path);
     }
 
     public void startPluginActivityForResult(Context context, PluginIntent intent, int requestCode) {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式");
+            return;
+        }
         try {
             List<ActivityInfo> ais = packageManager.findPluginActivity(intent);
             if (ais.size() > 1) {
                 //找到多于一个匹配的activity，弹出选择框供用户选择
-                showChooseDialog();
+                showChooseDialog(context, ais, intent);
                 return;
             }
             ActivityInfo ai = ais.get(0);
@@ -238,11 +293,26 @@ public class PluginManager {
         }
     }
 
-    private void showChooseDialog() {
-        //启动选择框activity
+    /**
+     * 启动选择框activity
+     *
+     * @param context    对应{@link PluginManager#startPluginActivityForResult(Context, PluginIntent, int)}中的context
+     * @param activities 可供选择的所有activity
+     * @param original   对应{@link PluginManager#startPluginActivityForResult(Context, PluginIntent, int)}中的intent
+     *                   为了通过intent传递给目标activity的数据不丢失要把它复制到启动ChooseDialog的intent中
+     */
+    private void showChooseDialog(Context context, List<ActivityInfo> activities, Intent original) {
+        PluginIntent intent = new PluginIntent(original);
+        intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY);
+        intent.putParcelableArrayListExtra(ChooseActivityDialog.KEY_ACTIVITIES, (ArrayList<? extends Parcelable>) activities);
+        context.startActivity(intent);
     }
 
     public void startPluginService(Context context, PluginIntent intent) {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式");
+            return;
+        }
     }
 
     private boolean checkPluginPath(String pluginPath) {
@@ -253,4 +323,59 @@ public class PluginManager {
         String fileName = plugin.getName();
         return fileName.endsWith(".zip") || fileName.endsWith(".apk") || fileName.endsWith(".jar");
     }
+
+    @Override
+    public void onConfigurationChanged(Configuration configuration) {
+        //do nothing
+    }
+
+    @Override
+    public void onLowMemory() {
+        //清理缓存
+        receiversById.clear();
+    }
+
+    /**
+     * 处理静态广播，当{@link com.u1city.u1pluginframework.core.reciever.BroadCastReceiverHost#onReceive(Context, Intent)}
+     * 接受到广播后，将会调用这个方法。这个方法负责将广播派发给插件apk的满足出发条件的静态广播接收者
+     *
+     * @param intent intent
+     */
+    public void sendBroadCastReceiver(BroadCastReceiverHost host, Intent intent) {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式，不能通过这种方式发送广播");
+            return;
+        }
+        List<ActivityInfo> receivers = packageManager.findReceivers(intent);
+        for (ActivityInfo receiverInfo : receivers) {
+            BroadCastReceiverPlugin receiver;
+            //查找有没有缓存receiver对象
+            String id = generateReceiverId(receiverInfo);
+            receiver = receiversById.get(id);
+            if (receiver != null) {
+                receiver.setHost(host);
+                receiver.onReceive(context, intent);
+                continue;
+            }
+            //如果没找到则实例化一个receiver
+            PluginApk apk = packageManager.getPlugin(receiverInfo.packageName);
+            if (apk == null) {
+                continue;
+            }
+            try {
+                Class<?> clazz = apk.getClassLoader().loadClass(receiverInfo.name);
+                receiver = (BroadCastReceiverPlugin) clazz.newInstance();
+                receiver.setHost(host);
+                receiver.onReceive(context, intent);
+                receiversById.put(id, receiver);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private String generateReceiverId(ActivityInfo info) {
+        return info.packageName + "::" + info.name;
+    }
+
 }

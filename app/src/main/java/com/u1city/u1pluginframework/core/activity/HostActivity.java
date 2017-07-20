@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.activity.host;
+package com.u1city.u1pluginframework.core.activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,8 +21,6 @@ import android.view.WindowManager;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.PluginManager;
-import com.u1city.u1pluginframework.core.activity.plugin.IPlugin;
-import com.u1city.u1pluginframework.core.activity.plugin.PluginActivity;
 import com.u1city.u1pluginframework.core.pk.PackageManager;
 import com.u1city.u1pluginframework.core.pk.PluginApk;
 
@@ -32,17 +31,27 @@ import com.u1city.u1pluginframework.core.pk.PluginApk;
 public class HostActivity extends FragmentActivity {
     private static final String TAG = "HostActivity";
     private IPlugin plugin;
+    private boolean devIsOpen;
 
     /**
-     * 在此处创建pluginActivity对象
+     * 设置plugin，只有开发模式才可以设置
+     * @param plugin plugin
      */
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(newBase);
+    void setPlugin(IPlugin plugin){
+        devIsOpen = PluginManager.getInstance(this).getDevIsOpen();
+        if(devIsOpen){
+            this.plugin = plugin;
+        }else{
+            Log.w(TAG,"只有开发模式开可以设置plugin");
+        }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (devIsOpen){
+            plugin.onPluginCreate(savedInstanceState);
+            return;
+        }
         String pluginName = getIntent().getStringExtra(PluginActivity.KEY_PLUGIN_NAME);
         if (pluginName == null || pluginName.equals("")) {
             finish();
@@ -706,7 +715,7 @@ public class HostActivity extends FragmentActivity {
 
     @Override
     public Resources getResources() {
-        if (plugin != null) {
+        if (plugin != null&&!devIsOpen) {
             return plugin.getPluginResource();
         } else {
             return super.getResources();

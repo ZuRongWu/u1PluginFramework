@@ -1,10 +1,15 @@
 package com.u1city.u1pluginframework.core.pk;
 
+import android.text.TextUtils;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import dalvik.system.DexClassLoader;
 
@@ -15,7 +20,9 @@ import dalvik.system.DexClassLoader;
 public class PluginClassLoader extends DexClassLoader {
 
     //依赖的插件的classLoader
-    private List<ClassLoader> otherLoaders;
+    private List<ClassLoader> otherLoaders = new ArrayList<>(0);
+    private Map<String,ClassLoader> classLoaderByPackage = new HashMap<>(0);
+    private Set<String> packageNames = new HashSet<>();
 
     public PluginClassLoader(String dexPath, String optimizedDirectory,
                              String libraryPath, ClassLoader parent) {
@@ -27,6 +34,21 @@ public class PluginClassLoader extends DexClassLoader {
             otherLoaders = new ArrayList<>(3);
         }
         otherLoaders.add(loader);
+    }
+
+    public void addDependency(String pName){
+        if(TextUtils.isEmpty(pName)){
+            return;
+        }
+        packageNames.add(pName);
+    }
+
+    public void invalidateDependency(String pName){
+        if(TextUtils.isEmpty(pName)){
+            return;
+        }
+        ClassLoader loader = classLoaderByPackage.remove(pName);
+        otherLoaders.remove(loader);
     }
 
     @Override
@@ -48,6 +70,24 @@ public class PluginClassLoader extends DexClassLoader {
 
     //从依赖中查找
     private Class<?> findFromOthers(String name) throws ClassNotFoundException {
+        //更新classLoader
+        if(packageNames.size() > classLoaderByPackage.size()){
+            for(String pName:packageNames){
+                ClassLoader newLoader = classLoaderByPackage.get(pName);
+                if(newLoader == null){
+                    PluginApk apk = PackageManager.getInstance(null).getPlugin(pName);
+                    if(apk == null){
+                        //为null则pName对应的插件不存在
+                        packageNames.remove(pName);
+                        classLoaderByPackage.remove(pName);
+                        continue;
+                    }
+                    newLoader = apk.getClassLoader();
+                    classLoaderByPackage.put(pName,newLoader);
+                    otherLoaders.add(newLoader);
+                }
+            }
+        }
         for (ClassLoader loader : otherLoaders) {
             Class<?> clazz = loader.loadClass(name);
             if (clazz != null) {

@@ -5,8 +5,6 @@ import android.util.Log;
 
 import com.u1city.u1pluginframework.core.PluginManager;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 
 /**
@@ -29,7 +27,7 @@ public class BaseDependencyLoader implements DependencyLoader {
             if (dependency.path.startsWith("http://") || dependency.path.startsWith("https://")) {
                 try {
                     //同步下载插件并安装
-                    pluginManager.installPluginSync(dependency.path);
+                    pluginManager.installPluginRemoteSync(dependency.path);
                 } catch (Exception e) {
                     Log.e(TAG, "插件路径不正确：" + dependency.path);
                     Log.e(TAG, e.getMessage());

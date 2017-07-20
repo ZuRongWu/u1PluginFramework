@@ -20,7 +20,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -99,8 +99,11 @@ public class DownloadManager {
     private static DownloadManager sManager;
     private FinalDb mDb;
     private Context mContext;
-    private List<DownloadEntry> mDownloadEntries;
+    //等待下载的队列
+    private List<DownloadEntry> mWaitingEntries = new ArrayList<>();
+    //暂停下载的队列
     private ThreadPoolExecutor mThreadPool;
+    //当前正在下载的任务
     private DownloadEntry mCurrentEntry;
     private List<DownLoadTask> mWorkingTask = new ArrayList<>(3);
     private String mDownloadDir;
@@ -128,7 +131,7 @@ public class DownloadManager {
                         mContext.sendBroadcast(i0);
                     }
                     //是否还有等待下载的任务，如果有下载下一个
-                    if (mDownloadEntries.size() > 0) {
+                    if (mWaitingEntries.size() > 0) {
                         start();
                     }
                     break;
@@ -159,7 +162,7 @@ public class DownloadManager {
                         i1.putExtra(KEY_ID, mCurrentEntry.id);
                         mContext.sendBroadcast(i1);
                     }
-                    if (mDownloadEntries.size() > 0) {
+                    if (mWaitingEntries.size() > 0) {
                         start();
                     }
                     break;
@@ -208,7 +211,7 @@ public class DownloadManager {
      * @param listener 回调对象
      * @param forEver  true：如果下载过程中突然退出应用，下次进入应用时可以恢复之前的下载状态
      */
-    public void download(String urlStr, DownloadListener listener, boolean forEver) {
+    public synchronized void download(String urlStr, DownloadListener listener, boolean forEver) {
         DownloadEntry entry = new DownloadEntry();
         entry.urlStr = urlStr;
         entry.listener = listener;
@@ -216,13 +219,15 @@ public class DownloadManager {
         String name = generateFileName(urlStr);
         entry.path = mDownloadDir + name;
         entry.status = STATUS_WAITTING;
-        mDownloadEntries.add(entry);
+        synchronized (this) {
+            mWaitingEntries.add(entry);
+        }
         entry.forEver = forEver;
         if (forEver) {
             //true时需要进行断点续传
             mDb.save(entry);
         }
-        if (mDownloadEntries.size() > 0) {
+        if (mWaitingEntries.size() > 0) {
             start();
         }
     }
@@ -266,19 +271,20 @@ public class DownloadManager {
      * 获取保存下载内容的文件名称。url = http://test.com/test.apk。
      * 先取test.apk,如果存在取test(1).apk，存在test(2).apk，一直追加直到
      * 不能存在为止
+     *
      * @param url url地址
      * @return 文件名
      */
-    private String generateFileName(String url){
+    private String generateFileName(String url) {
         String name = url.substring(url.lastIndexOf("/"));
         int dotIndex = name.lastIndexOf(".");
-        String pureName = name.substring(0,dotIndex);
+        String pureName = name.substring(0, dotIndex);
         String suffix = name.substring(dotIndex);
-        File f = new File(mDownloadDir,name);
+        File f = new File(mDownloadDir, name);
         int flag = 1;
-        while (f.exists()){
-            pureName = String.format(pureName + "(%s).",flag);
-            f = new File(mDownloadDir,pureName + suffix);
+        while (f.exists()) {
+            pureName = String.format(pureName + "(%s).", flag);
+            f = new File(mDownloadDir, pureName + suffix);
             flag += 1;
         }
         return pureName + suffix;
@@ -316,10 +322,53 @@ public class DownloadManager {
     /**
      * 在{@link Application#onCreate()}中调用这个方法，可以继续之前没完成的下载任务
      */
-    public void init() {
-        mDownloadEntries = mDb.findAllByWhere(DownloadEntry.class, String.format("status = %s||status = %s", STATUS_LOADDING, STATUS_WAITTING));
-        if (mDownloadEntries != null && mDownloadEntries.size() > 0) {
+    public synchronized void init() {
+        mWaitingEntries = mDb.findAllByWhere(DownloadEntry.class, String.format("status = %s||status = %s", STATUS_LOADDING, STATUS_WAITTING));
+        for (DownloadEntry entry : mWaitingEntries) {
+            if (entry.forEver) {
+                File file = new File(entry.path);
+                if (!file.exists()) {
+                    entry.done = 0;
+                    entry.currentPosition = 0;
+                } else {
+                    entry.done = file.length();
+                    entry.currentPosition = file.length();
+                }
+            }
+        }
+        if (mWaitingEntries != null && mWaitingEntries.size() > 0) {
             start();
+        }
+    }
+
+    /**
+     * 取消下载任务
+     *
+     * @param id 下载的任务id
+     */
+    public synchronized void cancel(long id) {
+        if (mCurrentEntry.id == id) {
+            //如果当前任务正在下载，则停止
+            for (DownLoadTask task : mWorkingTask) {
+                task.stop = true;
+            }
+            if (mCurrentEntry.forEver) {
+                mDb.delete(mCurrentEntry);
+            }
+            if (mWaitingEntries.size() > 0) {
+                start();
+            }
+        } else {
+            //如果在等待队列，则从队列中移除
+            for (DownloadEntry entry : mWaitingEntries) {
+                if (entry.id == id) {
+                    mWaitingEntries.remove(entry);
+                    if (entry.forEver) {
+                        mDb.delete(entry);
+                    }
+                    return;
+                }
+            }
         }
     }
 
@@ -329,9 +378,11 @@ public class DownloadManager {
         }
         mIsRunnig = true;
         if (mThreadPool == null) {
-            mThreadPool = new ThreadPoolExecutor(3, 5, 60 * 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(3));
+            mThreadPool = new ThreadPoolExecutor(3, 5, 60 * 10, TimeUnit.SECONDS, new LinkedBlockingDeque<Runnable>());
         }
-        mCurrentEntry = mDownloadEntries.remove(0);
+        synchronized (this) {
+            mCurrentEntry = mWaitingEntries.remove(0);
+        }
         mCurrentEntry.status = STATUS_LOADDING;
         DownLoadTask task = new DownLoadTask();
         task.urlStr = mCurrentEntry.urlStr;

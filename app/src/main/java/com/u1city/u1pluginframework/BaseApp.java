@@ -13,7 +13,10 @@ public class BaseApp extends Application {
     public void onCreate() {
         super.onCreate();
         try {
-            PluginManager.getInstance(getApplicationContext()).init();
+            PluginManager pluginManager = PluginManager.getInstance(this);
+            pluginManager.closeDevMode();
+            pluginManager.init();
+
         } catch (Exception e) {
             e.printStackTrace();
         }

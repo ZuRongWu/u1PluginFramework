@@ -15,6 +15,14 @@ public class PluginIntent extends Intent {
     private String pluginComponentName;
     private int pluginFlag;
 
+    public PluginIntent(Intent intent){
+        super(intent);
+    }
+
+    public PluginIntent(){
+        super();
+    }
+
     public Class<?> getPluginComponentClazz() {
         return pluginComponentClazz;
     }
