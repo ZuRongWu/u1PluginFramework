@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.pk;
+package com.u1city.u1pluginframework.core.pm;
 
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
@@ -23,35 +23,35 @@ public class PluginApk {
         public String path;
     }
 
-    public static class Package {
-        public String packageName;
-        public boolean baseHardwareAccelerated;
-        public ApplicationInfo applicationInfo;
-        public int versionCode;
-        public String versionName;
-        public final ArrayList<Activity> activities = new ArrayList<>(0);
-        public final ArrayList<Activity> receivers = new ArrayList<>(0);
-        public final ArrayList<Provider> providers = new ArrayList<>(0);
-        public final ArrayList<Service> services = new ArrayList<>(0);
+    /*package*/ static class Package {
+        String packageName;
+        boolean baseHardwareAccelerated;
+        ApplicationInfo applicationInfo;
+        int versionCode;
+        String versionName;
+        final ArrayList<Activity> activities = new ArrayList<>(0);
+        final ArrayList<Activity> receivers = new ArrayList<>(0);
+        final ArrayList<Provider> providers = new ArrayList<>(0);
+        final ArrayList<Service> services = new ArrayList<>(0);
     }
 
-    public static class Service extends Component<IntentFilter> {
-        public ServiceInfo serviceInfo;
+    /*package*/ static class Service extends Component<IntentFilter> {
+        ServiceInfo serviceInfo;
     }
 
-    public static class Provider extends Component<IntentFilter> {
-        public ProviderInfo providerInfo;
+    /*package*/ static class Provider extends Component<IntentFilter> {
+        ProviderInfo providerInfo;
     }
 
-    public static class Activity extends Component<IntentFilter> {
-        public ActivityInfo activityInfo;
+    /*package*/ static class Activity extends Component<IntentFilter> {
+        ActivityInfo activityInfo;
     }
 
-    public static class Component<II extends IntentFilter> {
-        public Package owner;
-        public List<II> intents = new ArrayList<>();
-        public String className;
-        public Bundle metaData;
+    /*package*/ static class Component<II extends IntentFilter> {
+        Package owner;
+        List<II> intents = new ArrayList<>();
+        String className;
+        Bundle metaData;
     }
 
     private static final String TAG = "PluginApk";
@@ -104,7 +104,7 @@ public class PluginApk {
     /**
      * @return 插件包所有的BroadCastReciever信息
      */
-    public List<Activity> getPluginRecievers() {
+    public List<Activity> getPluginReceivers() {
         return pluginPackage.receivers;
     }
 
@@ -133,6 +133,10 @@ public class PluginApk {
         this.pluginPackage = pluginPackage;
     }
 
+    /**
+     * 添加依赖此插件apk的插件名称
+     * @param pluginName 插件名称
+     */
     public void addDepended(String pluginName) {
         if (dependended == null) {
             dependended = new ArrayList<>(3);
@@ -140,79 +144,156 @@ public class PluginApk {
         dependended.add(pluginName);
     }
 
+    /**
+     * 获取所有依赖此插件的插件名称列表
+     * @return 插件名称列表
+     */
     public List<String> getDependended() {
         return dependended;
     }
 
+    /**
+     * 获取此插件依赖的插件信息
+     * @return 插件信息列表
+     */
     public List<Dependency> getDependencies() {
         return dependencies;
     }
 
+    /**
+     * 设置此插件依赖的插件信息
+     * @param dependencies 插件信息列表
+     */
     public void setDependencies(List<Dependency> dependencies) {
         this.dependencies = dependencies;
     }
 
+    /**
+     * 设置apk的路径
+     * @param apkPath apk的路径
+     */
     public void setApkPath(String apkPath) {
         this.apkPath = apkPath;
     }
 
+    /**
+     * 获取apk的路径
+     * @return apk的路径
+     */
     public String getApkPath() {
         return apkPath;
     }
 
+    /**
+     * 设置nativeLib的目录
+     * @param nativeLibDir nativeLib的目录
+     */
     public void setNativeLibDir(String nativeLibDir) {
         this.nativeLibDir = nativeLibDir;
     }
 
+    /**
+     * 获取nativeLib的目录
+     * @return nativeLib的目录
+     */
     public String getNativeLibDir() {
         return nativeLibDir;
     }
 
+    /**
+     * 获取插件的资源Resources对象，只有通过这个对象访问插件的资源
+     * @return Resources对象
+     */
     public Resources getResources() {
         return resources;
     }
 
+    /**
+     * 设置插件的Resources对象，在安装插件的时候完成设置
+     * @param resources Resources对象
+     */
     public void setResources(Resources resources) {
         this.resources = resources;
     }
 
+    /**
+     * 获取插件的类加载器，使用插件的类都要通过这个加载器加载
+     * @return classLoader对象
+     */
     public ClassLoader getClassLoader() {
         return classLoader;
     }
 
+    /**
+     * 设置classLoader对象，在安装插件的时候进行设置
+     * @param classLoader classLoader对象
+     */
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
+    /**
+     * 获取插件的代码路径
+     * @return 代码路径
+     */
     public String getCodeDir() {
         return codeDir;
     }
 
+    /**
+     * 设置插件的代码路径，安装的时候完成设置
+     * @param codeDir 代码路径
+     */
     public void setCodeDir(String codeDir) {
         this.codeDir = codeDir;
     }
 
+    /**
+     * 获取插件的资源路径
+     * @return 资源路径
+     */
     public String getResDir() {
         return resDir;
     }
 
+    /**
+     * 设置插件的资源路径，目前没有设置这路径。所以通过{@link PluginApk#getResDir()}获取到的路径为空
+     * @param resDir 资源路径
+     */
     public void setResDir(String resDir) {
         this.resDir = resDir;
     }
 
+    /**
+     * 获取插件名称，目前设置为和包名一样
+     * @return 插件名称
+     */
     public String getPluginName() {
 
         return pluginName;
     }
 
+    /**
+     * 设置packageManager对象
+     * @param packageManager 对象
+     */
     public void setPackageManager(PackageManager packageManager) {
         this.packageManager = packageManager;
     }
 
+    /**
+     * 设置插件名称，在安装插件时调用，目前设置为和包名一样
+     * @param pluginName 插件名称
+     */
     public void setPluginName(String pluginName) {
         this.pluginName = pluginName;
     }
 
+    /**
+     * 根据插件名称获取相应插件apk的资源对象，只能获取此插件依赖的插件的资源对象
+     * @param pluginName 插件名称
+     * @return 资源对象
+     */
     public Resources getResources(String pluginName) {
         boolean isFound = false;
         for (Dependency d : dependencies) {

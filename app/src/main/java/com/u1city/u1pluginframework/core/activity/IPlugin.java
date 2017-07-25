@@ -16,8 +16,7 @@ import android.view.View;
 import android.view.WindowManager;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
-import com.u1city.u1pluginframework.core.activity.HostActivity;
-import com.u1city.u1pluginframework.core.pk.PluginApk;
+import com.u1city.u1pluginframework.core.pm.PluginApk;
 
 /**
  * pluginActivity的接口

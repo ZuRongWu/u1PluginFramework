@@ -17,8 +17,8 @@ import android.widget.TextView;
 import com.u1city.u1pluginframework.R;
 import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.PluginManager;
-import com.u1city.u1pluginframework.core.pk.PackageManager;
-import com.u1city.u1pluginframework.core.pk.PluginApk;
+import com.u1city.u1pluginframework.core.pm.PackageManager;
+import com.u1city.u1pluginframework.core.pm.PluginApk;
 
 import java.util.ArrayList;
 import java.util.List;

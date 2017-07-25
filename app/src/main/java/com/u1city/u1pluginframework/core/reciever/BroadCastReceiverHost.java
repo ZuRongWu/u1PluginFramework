@@ -3,6 +3,7 @@ package com.u1city.u1pluginframework.core.reciever;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
 
 import com.u1city.u1pluginframework.core.PluginManager;
 
@@ -12,10 +13,15 @@ import com.u1city.u1pluginframework.core.PluginManager;
  */
 
 public class BroadCastReceiverHost extends BroadcastReceiver{
+    public static final String ACTION_PLUGIN_FRAMEWORK_RECEIVER_HOST = "action_plugin_framework_receiver_host";
     private PluginManager mPluginManager;
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        if(!TextUtils.equals(action,ACTION_PLUGIN_FRAMEWORK_RECEIVER_HOST)){
+            return;
+        }
         if (mPluginManager == null){
             mPluginManager = PluginManager.getInstance(context);
         }

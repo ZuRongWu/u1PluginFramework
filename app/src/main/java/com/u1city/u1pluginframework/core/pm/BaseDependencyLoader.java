@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.pk;
+package com.u1city.u1pluginframework.core.pm;
 
 import android.content.Context;
 import android.util.Log;

@@ -255,11 +255,15 @@ public class DownloadManager {
             public void onFinish(String path) {
                 Log.d(TAG, "downloadSync finish：" + path);
                 res[0] = path;
-                mLock.notify();
+                synchronized (mLock){
+                    mLock.notify();
+                }
             }
         }, false);
         try {
-            mLock.wait();
+            synchronized (mLock){
+                mLock.wait();
+            }
             return res[0];
         } catch (InterruptedException e) {
             e.printStackTrace();

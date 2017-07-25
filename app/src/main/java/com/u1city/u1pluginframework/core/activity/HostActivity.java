@@ -21,8 +21,8 @@ import android.view.WindowManager;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.PluginManager;
-import com.u1city.u1pluginframework.core.pk.PackageManager;
-import com.u1city.u1pluginframework.core.pk.PluginApk;
+import com.u1city.u1pluginframework.core.pm.PackageManager;
+import com.u1city.u1pluginframework.core.pm.PluginApk;
 
 /**
  * host activity
@@ -83,7 +83,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperCreate(Bundle savedInstanceState) {
+    final void onSuperCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
 
@@ -96,7 +96,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public boolean onSuperCreateThumbnail(Bitmap outBitmap, Canvas canvas) {
+    final boolean onSuperCreateThumbnail(Bitmap outBitmap, Canvas canvas) {
         return super.onCreateThumbnail(outBitmap, canvas);
     }
 
@@ -110,7 +110,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public CharSequence onSuperCreateDescription() {
+    final CharSequence onSuperCreateDescription() {
         return super.onCreateDescription();
     }
 
@@ -123,7 +123,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperUserLeaveHint() {
+    final void onSuperUserLeaveHint() {
         super.onUserLeaveHint();
     }
 
@@ -136,7 +136,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperPause() {
+    final void onSuperPause() {
         super.onPause();
     }
 
@@ -149,7 +149,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperSaveInstanceState(Bundle outState) {
+    final void onSuperSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
     }
 
@@ -162,7 +162,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperNewIntent(Intent intent) {
+    final void onSuperNewIntent(Intent intent) {
         super.onNewIntent(intent);
     }
 
@@ -175,7 +175,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperResume() {
+    final void onSuperResume() {
         super.onResume();
     }
 
@@ -188,7 +188,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperStateNotSaved() {
+    final void onSuperStateNotSaved() {
         super.onStateNotSaved();
     }
 
@@ -201,7 +201,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperRestart() {
+    final void onSuperRestart() {
         super.onRestart();
     }
 
@@ -214,7 +214,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperStart() {
+    final void onSuperStart() {
         super.onStart();
     }
 
@@ -227,7 +227,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperRestoreInstanceState(Bundle saveInstanceState) {
+    final void onSuperRestoreInstanceState(Bundle saveInstanceState) {
         super.onRestoreInstanceState(saveInstanceState);
     }
 
@@ -240,7 +240,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperStop() {
+    final void onSuperStop() {
         super.onStop();
     }
 
@@ -253,7 +253,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperDestroy() {
+    final void onSuperDestroy() {
         super.onDestroy();
     }
 
@@ -266,7 +266,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperConfigurationChanged(Configuration newConfig) {
+    final void onSuperConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
     }
 
@@ -279,7 +279,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperLowMemory() {
+    final void onSuperLowMemory() {
         super.onLowMemory();
     }
 
@@ -292,7 +292,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperTrimMemory(int level) {
+    final void onSuperTrimMemory(int level) {
         super.onTrimMemory(level);
     }
 
@@ -305,7 +305,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public boolean onSuperKeyDown(int keyCode, KeyEvent event) {
+    final boolean onSuperKeyDown(int keyCode, KeyEvent event) {
         return super.onKeyDown(keyCode, event);
     }
 
@@ -319,7 +319,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public boolean onSuperKeyLongPress(int keyCode, KeyEvent event) {
+    final boolean onSuperKeyLongPress(int keyCode, KeyEvent event) {
         return super.onKeyLongPress(keyCode, event);
     }
 
@@ -332,7 +332,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public boolean onSuperKeyUp(int keyCode, KeyEvent event) {
+    final boolean onSuperKeyUp(int keyCode, KeyEvent event) {
         return super.onKeyUp(keyCode, event);
     }
 
@@ -345,7 +345,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public boolean onSuperKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+    final boolean onSuperKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
         return super.onKeyMultiple(keyCode, repeatCount, event);
     }
 
@@ -358,7 +358,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperBackPressed() {
+    final void onSuperBackPressed() {
         super.onBackPressed();
     }
 
@@ -371,7 +371,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public boolean onSuperKeyShortcut(int keyCode, KeyEvent event) {
+    final boolean onSuperKeyShortcut(int keyCode, KeyEvent event) {
         return super.onKeyShortcut(keyCode, event);
     }
 
@@ -384,7 +384,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public boolean onSuperTouchEvent(MotionEvent event) {
+    final boolean onSuperTouchEvent(MotionEvent event) {
         return super.onTouchEvent(event);
     }
 
@@ -397,7 +397,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperUserInteraction() {
+    final void onSuperUserInteraction() {
         super.onUserInteraction();
     }
 
@@ -410,7 +410,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperWindowAttributesChanged(WindowManager.LayoutParams params) {
+    final void onSuperWindowAttributesChanged(WindowManager.LayoutParams params) {
         super.onWindowAttributesChanged(params);
     }
 
@@ -423,7 +423,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperContentChanged() {
+    final void onSuperContentChanged() {
         super.onContentChanged();
     }
 
@@ -436,7 +436,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperWindowFocusChanged(boolean hasFocus) {
+    final void onSuperWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
     }
 
@@ -449,7 +449,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperAttachedToWindow() {
+    final void onSuperAttachedToWindow() {
         super.onAttachedToWindow();
     }
 
@@ -462,7 +462,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperDetachedFromWindow() {
+    final void onSuperDetachedFromWindow() {
         super.onDetachedFromWindow();
     }
 
@@ -476,7 +476,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public View onSuperCreatePanelView(int featureId) {
+    final View onSuperCreatePanelView(int featureId) {
         return super.onCreatePanelView(featureId);
     }
 
@@ -488,7 +488,7 @@ public class HostActivity extends FragmentActivity {
         return super.onCreatePanelMenu(featureId, menu);
     }
 
-    public boolean onSuperCreatePanelMenu(int featureId, Menu menu) {
+    final boolean onSuperCreatePanelMenu(int featureId, Menu menu) {
         return super.onCreatePanelMenu(featureId, menu);
     }
 
@@ -500,7 +500,7 @@ public class HostActivity extends FragmentActivity {
         return super.onPreparePanel(featureId, view, menu);
     }
 
-    public boolean onSuperPreparePanel(int featureId, View view, Menu menu) {
+    final boolean onSuperPreparePanel(int featureId, View view, Menu menu) {
         return super.onPreparePanel(featureId, view, menu);
     }
 
@@ -512,7 +512,7 @@ public class HostActivity extends FragmentActivity {
         return super.onMenuOpened(featureId, menu);
     }
 
-    public boolean onSuperMenuOpened(int featureId, Menu menu) {
+    final boolean onSuperMenuOpened(int featureId, Menu menu) {
         return super.onMenuOpened(featureId, menu);
     }
 
@@ -524,7 +524,7 @@ public class HostActivity extends FragmentActivity {
         return super.onMenuItemSelected(featureId, item);
     }
 
-    public boolean onSuperMenuItemSelected(int featureId, MenuItem item) {
+    final boolean onSuperMenuItemSelected(int featureId, MenuItem item) {
         return super.onMenuItemSelected(featureId, item);
     }
 
@@ -537,7 +537,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperPanelClosed(int featureId, Menu menu) {
+    final void onSuperPanelClosed(int featureId, Menu menu) {
         super.onPanelClosed(featureId, menu);
     }
 
@@ -549,7 +549,7 @@ public class HostActivity extends FragmentActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    public boolean onSuperCreateOptionsMenu(Menu menu) {
+    final boolean onSuperCreateOptionsMenu(Menu menu) {
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -561,7 +561,7 @@ public class HostActivity extends FragmentActivity {
         return super.onPrepareOptionsMenu(menu);
     }
 
-    public boolean onSuperPrepareOptionsMenu(Menu menu) {
+    final boolean onSuperPrepareOptionsMenu(Menu menu) {
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -574,7 +574,7 @@ public class HostActivity extends FragmentActivity {
     }
 
 
-    public boolean onSuperOptionsItemSelected(MenuItem item) {
+    final boolean onSuperOptionsItemSelected(MenuItem item) {
         return super.onOptionsItemSelected(item);
     }
 
@@ -587,7 +587,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperOptionsMenuClosed(Menu menu) {
+    final void onSuperOptionsMenuClosed(Menu menu) {
         super.onOptionsMenuClosed(menu);
     }
 
@@ -600,7 +600,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public boolean onSuperContextItemSelected(MenuItem item) {
+    final boolean onSuperContextItemSelected(MenuItem item) {
         return super.onContextItemSelected(item);
     }
 
@@ -613,7 +613,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperContextMenuClosed(Menu menu) {
+    final void onSuperContextMenuClosed(Menu menu) {
         super.onContextMenuClosed(menu);
     }
 
@@ -626,7 +626,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperActivityResult(int requestCode, int resultCode, Intent data) {
+    final void onSuperActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -639,7 +639,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperActivityReenter(int resultCode, Intent data) {
+    final void onSuperActivityReenter(int resultCode, Intent data) {
         super.onActivityReenter(resultCode, data);
     }
 
@@ -652,7 +652,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperTitleChanged(CharSequence title, int color) {
+    final void onSuperTitleChanged(CharSequence title, int color) {
         super.onTitleChanged(title, color);
     }
 
@@ -666,7 +666,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public View onSuperCreateView(String name, Context context, AttributeSet attrs) {
+    final View onSuperCreateView(String name, Context context, AttributeSet attrs) {
         return super.onCreateView(name, context, attrs);
     }
 
@@ -679,7 +679,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public View onSuperCreateView(View parent, String name, Context context, AttributeSet attrs) {
+    final View onSuperCreateView(View parent, String name, Context context, AttributeSet attrs) {
         return super.onCreateView(parent, name, context, attrs);
     }
 
@@ -692,7 +692,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperVisibleBehindCanceled() {
+    final void onSuperVisibleBehindCanceled() {
         super.onVisibleBehindCanceled();
     }
 
@@ -709,7 +709,7 @@ public class HostActivity extends FragmentActivity {
         }
     }
 
-    public void onSuperEnterAnimationComplete() {
+    final void onSuperEnterAnimationComplete() {
         super.onEnterAnimationComplete();
     }
 

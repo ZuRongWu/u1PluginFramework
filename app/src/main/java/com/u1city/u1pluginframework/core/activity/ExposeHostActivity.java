@@ -7,7 +7,7 @@ import android.os.Parcelable;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.error.PluginActivityNotFindException;
-import com.u1city.u1pluginframework.core.pk.PackageManager;
+import com.u1city.u1pluginframework.core.pm.PackageManager;
 
 import java.util.ArrayList;
 import java.util.List;

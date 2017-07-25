@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.pk;
+package com.u1city.u1pluginframework.core.pm;
 
 import android.text.TextUtils;
 import java.io.IOException;

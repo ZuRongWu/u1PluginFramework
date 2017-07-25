@@ -8,12 +8,14 @@ import android.os.Parcel;
  * Created by wuzr on 2016/12/2.
  */
 public class PluginIntent extends Intent {
+    public static final String KEY_PLUGIN_ACTION = "key_plugin_action";
     public static final int FLAG_LAUNCH_PLUGIN = 1;
     public static final int FLAG_LAUNCH_ACTUAL_ACTIVITY = 1<<1;
     //默认为插件apk的文件名
     private String pluginName;
     private String pluginComponentName;
     private int pluginFlag;
+    private String pluginAction;
 
     public PluginIntent(Intent intent){
         super(intent);
@@ -23,8 +25,20 @@ public class PluginIntent extends Intent {
         super();
     }
 
+    public PluginIntent(Parcel in){
+        readFromParcel(in);
+    }
+
     public Class<?> getPluginComponentClazz() {
         return pluginComponentClazz;
+    }
+
+    public void setPluginAction(String pluginAction) {
+        this.pluginAction = pluginAction;
+    }
+
+    public String getPluginAction() {
+        return pluginAction;
     }
 
     public void setPluginComponentClazz(Class<?> pluginComponentClazz) {
@@ -61,16 +75,28 @@ public class PluginIntent extends Intent {
     @Override
     public void writeToParcel(Parcel out, int flags) {
         super.writeToParcel(out, flags);
-//        out.writeString(pluginName);
-//        out.writeString(pluginComponentName);
-//        out.writeInt(pluginFlag);
+        out.writeString(pluginName);
+        out.writeString(pluginComponentName);
+        out.writeString(pluginAction);
+        out.writeInt(pluginFlag);
     }
 
     @Override
     public void readFromParcel(Parcel in) {
         super.readFromParcel(in);
-//        pluginName = in.readString();
-//        pluginComponentName = in.readString();
-//        pluginFlag = in.readInt();
+        pluginName = in.readString();
+        pluginComponentName = in.readString();
+        pluginAction = in.readString();
+        pluginFlag = in.readInt();
     }
+
+    public static final Creator<PluginIntent> CREATOR
+            = new Creator<PluginIntent>() {
+        public PluginIntent createFromParcel(Parcel source) {
+            return new PluginIntent(source);
+        }
+        public PluginIntent[] newArray(int size) {
+            return new PluginIntent[size];
+        }
+    };
 }

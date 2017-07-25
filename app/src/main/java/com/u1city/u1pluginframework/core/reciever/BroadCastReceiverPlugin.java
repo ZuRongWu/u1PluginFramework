@@ -11,11 +11,11 @@ import com.u1city.u1pluginframework.core.PluginManager;
 /**
  * Created by wuzr on 2017/7/20.
  * BroadCastReceiver插件，插件apk使用静态广播时要继承这个类
- * 使用过程中应该调用XXXPluginXXX()的方法
+ * 使用过程中应该调用XXXPluginXXX()的方法和host的方法
  */
 
 public class BroadCastReceiverPlugin extends BroadcastReceiver implements IPlugin{
-    private BroadcastReceiver mHost;
+    protected BroadcastReceiver mHost;
     @Override
     public void onReceive(Context context, Intent intent) {
 

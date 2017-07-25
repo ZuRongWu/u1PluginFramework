@@ -22,7 +22,7 @@ import android.view.WindowManager;
 
 import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.PluginManager;
-import com.u1city.u1pluginframework.core.pk.PluginApk;
+import com.u1city.u1pluginframework.core.pm.PluginApk;
 
 /**
  * plugin activity，开发者应该实现onPluginXXX(),而不是onXXX();

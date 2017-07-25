@@ -1,4 +1,4 @@
-package com.u1city.u1pluginframework.core.pk;
+package com.u1city.u1pluginframework.core.pm;
 
 /**
  * 解析plugin的配置文件plugin.xml
