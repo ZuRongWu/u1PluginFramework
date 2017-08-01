@@ -31,7 +31,7 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
  * 或者是引发异常，应该避免使用。当以正常模式启动activity时，开发者仍可使用activity的API
  * Created by user on 2016/12/2.
  */
-public class PluginActivity extends HostActivity implements IPlugin {
+public class PluginActivity extends HostActivity implements ActivityPlugin {
     public static final String KEY_PLUGIN_ACTIVITY_INFO = "key_plugin_activityInfo";
     public static final String KEY_PLUGIN_NAME = "key_plugin_name";
     private static final String TAG = "PluginActivity";
@@ -320,19 +320,6 @@ public class PluginActivity extends HostActivity implements IPlugin {
     }
 
     @Override
-    public Resources getPluginResource(String pluginName) {
-        if(devIsOpen){
-            return host.getResources();
-        }
-        return apk.getResources(pluginName);
-    }
-
-    @Override
-    public void startPluginActivity(PluginIntent intent) {
-        startPluginActivityForResult(intent, 0);
-    }
-
-    @Override
     public void startPluginActivityForResult(PluginIntent intent, int requestCode) {
         if(devIsOpen){
             //开发模式不能启动其他插件的activity
@@ -351,7 +338,6 @@ public class PluginActivity extends HostActivity implements IPlugin {
         }else{
             if (!TextUtils.isEmpty(intent.getPluginComponentName())&&!TextUtils.isEmpty(intent.getPluginName())){
                 //当指定插件的名称和组件的名称时，则是要以插件的形式启动
-                intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_PLUGIN);
                 if(intent.getPluginComponentName().startsWith(".")){
                     intent.setPluginComponentName(intent.getPluginName() + intent.getPluginComponentName());
                 }
@@ -395,5 +381,13 @@ public class PluginActivity extends HostActivity implements IPlugin {
     @Override
     public void setApk(PluginApk apk) {
         this.apk = apk;
+    }
+
+    @Override
+    public Resources getResources(String plugin) {
+        if(apk != null){
+            return apk.getResources(plugin);
+        }
+        return null;
     }
 }

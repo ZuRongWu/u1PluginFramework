@@ -6,12 +6,11 @@ import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.IBinder;
-import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.u1city.u1pluginframework.core.PluginIntent;
+import com.u1city.u1pluginframework.core.ContextTransverter;
 import com.u1city.u1pluginframework.core.PluginManager;
 import com.u1city.u1pluginframework.core.pm.PackageManager;
 import com.u1city.u1pluginframework.core.pm.PluginApk;
@@ -23,25 +22,24 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
 public class HostService extends Service {
     private static final String TAG = "HostService";
     private boolean devIsOpen;
-    private IPlugin plugin;
-
+    private PluginServiceContainer pluginContainer;
     public HostService(){
         devIsOpen = PluginManager.getInstance(this).getDevIsOpen();
     }
 
-    void setPlugin(IPlugin plugin){
-        if(devIsOpen){
-            this.plugin = plugin;
-        }else{
-            Log.w(TAG,"只有开发模式可以设置plugin");
-        }
+    void setPlugin(ServicePlugin pluginContainer){
+//        if(devIsOpen){
+//            this.pluginContainer = pluginContainer;
+//        }else{
+//            Log.w(TAG,"只有开发模式可以设置plugin");
+//        }
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         if(initPlugin(intent)){
-            return plugin.onPluginBind(intent);
+            return pluginContainer.onPluginBind(intent);
         }
         return null;
     }
@@ -49,7 +47,7 @@ public class HostService extends Service {
     @Override
     public void onCreate() {
         if(devIsOpen){
-            plugin.onPluginCreate();
+            pluginContainer.onPluginCreate();
         }
     }
 
@@ -60,7 +58,7 @@ public class HostService extends Service {
     @Override
     public int onStartCommand(Intent intent,int flags, int startId) {
         if(initPlugin(intent)){
-            return plugin.onPluginStartCommand(intent,flags,startId);
+            return pluginContainer.onPluginStartCommand(intent,flags,startId);
         }else {
            return super.onStartCommand(intent,flags,startId);
         }
@@ -73,7 +71,7 @@ public class HostService extends Service {
     @Override
     public void onStart(Intent intent, int startId) {
         if(initPlugin(intent)){
-            plugin.onPluginStart(intent,startId);
+            pluginContainer.onPluginStart(intent,startId);
         }else{
             super.onStart(intent, startId);
         }
@@ -85,8 +83,8 @@ public class HostService extends Service {
 
     @Override
     public void onDestroy() {
-        if(plugin != null){
-            plugin.onPluginDestroy();
+        if(pluginContainer != null){
+            pluginContainer.onPluginDestroy();
         }else{
             super.onDestroy();
         }
@@ -98,8 +96,8 @@ public class HostService extends Service {
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        if(plugin != null){
-            plugin.onPluginConfigurationChanged(newConfig);
+        if(pluginContainer != null){
+            pluginContainer.onPluginConfigurationChanged(newConfig);
         }else{
             super.onConfigurationChanged(newConfig);
         }
@@ -111,16 +109,13 @@ public class HostService extends Service {
 
     @Override
     public Resources getResources() {
-        if(plugin != null&&!devIsOpen){
-            return plugin.getPluginResources();
-        }
         return super.getResources();
     }
 
     @Override
     public void onLowMemory() {
-        if(plugin != null){
-            plugin.onPluginLowMemory();
+        if(pluginContainer != null){
+            pluginContainer.onPluginLowMemory();
         }else{
             super.onLowMemory();
         }
@@ -132,8 +127,8 @@ public class HostService extends Service {
 
     @Override
     public void onTrimMemory(int level) {
-        if(plugin != null){
-            plugin.onPluginTrimMemory(level);
+        if(pluginContainer != null){
+            pluginContainer.onPluginTrimMemory(level);
         }else{
             super.onTrimMemory(level);
         }
@@ -145,8 +140,8 @@ public class HostService extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        if(plugin != null){
-            return plugin.onPluginUnbind(intent);
+        if(pluginContainer != null){
+            return pluginContainer.onPluginUnbind(intent);
         }else{
             return super.onUnbind(intent);
         }
@@ -158,8 +153,8 @@ public class HostService extends Service {
 
     @Override
     public void onRebind(Intent intent) {
-        if(plugin != null){
-            plugin.onPluginRebind(intent);
+        if(pluginContainer != null){
+            pluginContainer.onPluginRebind(intent);
         }else{
             super.onRebind(intent);
         }
@@ -171,8 +166,8 @@ public class HostService extends Service {
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-        if(plugin != null){
-            plugin.onPluginTaskRemoved(rootIntent);
+        if(pluginContainer != null){
+            pluginContainer.onPluginTaskRemoved(rootIntent);
         }else{
             super.onTaskRemoved(rootIntent);
         }
@@ -188,38 +183,55 @@ public class HostService extends Service {
      * @return true：初始化成功；false：初始化失败
      */
     private boolean initPlugin(Intent intent){
-        if(plugin != null){
+        if(pluginContainer == null){
             //plugin不为空时说明plugin已经初始化完成
-            return true;
+            pluginContainer = new PluginServiceContainer();
         }
         String pluginName = intent.getStringExtra(PluginService.KEY_PLUGIN_NAME);
         if(TextUtils.isEmpty(pluginName)){
             //没有传插件名称不允许，暂停服务
-            Log.w(TAG,"没有传插件名称不允许，暂停服务");
-            stopSelf();
+            Log.w(TAG,"没有传插件名称不允许");
+            if(pluginContainer.size() == 0){
+                stopSelf();
+            }
             return false;
         }
         ServiceInfo si = intent.getParcelableExtra(PluginService.KEY_PLUGIN_SERVICE_INFO);
         if(si == null){
             //没有传serveInfo不允许，暂停服务
-            Log.w(TAG,"没有传serveInfo不允许，暂停服务");
-            stopSelf();
+            Log.w(TAG,"没有传serveInfo不允许");
+            if(pluginContainer.size() == 0){
+                stopSelf();
+            }
             return false;
+        }
+        String id = pluginContainer.generateServiceId(si.packageName,si.name);
+        if(pluginContainer.containServicePlugin(id)){
+            //如果container中包含将要启动的service说明service已经启动不需要重复启动
+            return true;
         }
         PluginApk apk = PackageManager.getInstance(this).getPlugin(pluginName);
         if(apk == null){
             Log.w(TAG,"插件不存在：" + pluginName);
-            stopSelf();
+            if(pluginContainer.size() == 0){
+                stopSelf();
+            }
             return false;
         }
         try {
             Class sClazz = apk.getClassLoader().loadClass(si.name);
-            plugin = (IPlugin) sClazz.newInstance();
+            ServicePlugin plugin = (ServicePlugin) sClazz.newInstance();
+            plugin.setApk(apk);
+            plugin.setHost(ContextTransverter.transformService(apk,this));
             plugin.onPluginCreate();
+            pluginContainer.addPluginService(id,plugin);
+//            PluginManager.getInstance(null).applyStartPluginServiceSuccess(si,this);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
-            stopSelf();
+            if(pluginContainer.size() == 0){
+                stopSelf();
+            }
             return false;
         }
     }

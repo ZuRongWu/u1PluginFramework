@@ -25,6 +25,6 @@ public class BroadCastReceiverHost extends BroadcastReceiver{
         if (mPluginManager == null){
             mPluginManager = PluginManager.getInstance(context);
         }
-        mPluginManager.sendBroadCastReceiver(this,intent);
+        mPluginManager.sendBroadCastReceiver(context,this,intent);
     }
 }

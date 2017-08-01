@@ -1,43 +1,34 @@
 package com.u1city.u1pluginframework.core.service;
 
-import android.app.Application;
-import android.app.Notification;
-import android.app.Service;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 
+import com.u1city.u1pluginframework.core.PluginContext;
 import com.u1city.u1pluginframework.core.PluginManager;
 import com.u1city.u1pluginframework.core.pm.PluginApk;
 
 /**
- * plugin service
+ * 所有的插件的service都要继承这个类，开发中使用host的方法
  * Created by wuzr on 2016/12/2.
  */
-public class PluginService extends HostService implements IPlugin {
+public class PluginService extends HostService implements ServicePlugin{
     public static final String KEY_PLUGIN_NAME = "key_plugin_name";
     public static final String KEY_PLUGIN_SERVICE_INFO = "key_service_info";
 
     protected HostService mHost;
-    private boolean mIsDevOpen;
-    private PluginApk mApk;
+    private PluginApk apk;
 
     public PluginService(){
-        mIsDevOpen = PluginManager.getInstance(null).getDevIsOpen();
-        if(mIsDevOpen){
+        boolean devIsOpen = PluginManager.getInstance(null).getDevIsOpen();
+        if(devIsOpen){
             setHost(this);
         }
     }
 
     public void setHost(HostService host){
         this.mHost = host;
-    }
-
-    @Override
-    public Application getPluginApplication() {
-        return mHost.getApplication();
     }
 
     @Override
@@ -72,7 +63,16 @@ public class PluginService extends HostService implements IPlugin {
 
     @Override
     public void setApk(PluginApk apk) {
-        mApk = apk;
+        //do nothing
+        this.apk = apk;
+    }
+
+    @Override
+    public Resources getResources(String plugin) {
+        if(apk != null){
+            apk.getResources(plugin);
+        }
+        return null;
     }
 
     @Override
@@ -91,11 +91,6 @@ public class PluginService extends HostService implements IPlugin {
     }
 
     @Override
-    public void stopPluginSelf() {
-        mHost.stopSelf();
-    }
-
-    @Override
     public void onPluginTrimMemory(int level) {
         mHost.onSuperTrimMemory(level);
     }
@@ -103,33 +98,5 @@ public class PluginService extends HostService implements IPlugin {
     @Override
     public boolean onPluginUnbind(Intent intent) {
         return mHost.onSuperUnbind(intent);
-    }
-
-    @Override
-    public Resources getPluginResources() {
-        if(mApk != null){
-            return mApk.getResources();
-        }
-        return null;
-    }
-
-    @Override
-    public void startPluginForeground(int id, Notification notification) {
-        mHost.startForeground(id,notification);
-    }
-
-    @Override
-    public void stopPluginForeground(boolean removeNotification) {
-        mHost.stopForeground(removeNotification);
-    }
-
-    @Override
-    public void stopPluginSelf(int startId) {
-        mHost.stopSelf(startId);
-    }
-
-    @Override
-    public boolean stopPluginSelfResult(int startId) {
-        return mHost.stopSelfResult(startId);
     }
 }

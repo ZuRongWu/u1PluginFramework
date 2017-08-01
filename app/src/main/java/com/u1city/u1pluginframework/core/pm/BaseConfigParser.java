@@ -26,7 +26,7 @@ import java.util.List;
  * </plugin>
  * Created by wzr on 2016/12/6.
  */
-public class BaseConfigParser implements ConfigParser {
+class BaseConfigParser implements ConfigParser {
     private static final String TAG = "BaseConfigParser";
 
     @Override

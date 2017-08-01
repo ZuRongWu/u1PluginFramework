@@ -15,6 +15,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 
+import com.u1city.u1pluginframework.core.PluginContext;
 import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.pm.PluginApk;
 
@@ -22,7 +23,7 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
  * pluginActivity的接口
  * Created by wuzr on 2016/12/5.
  */
-public interface IPlugin {
+interface ActivityPlugin extends PluginContext{
     void onPluginCreate(Bundle savedInstanceState);
 
     void onPluginStart();
@@ -127,17 +128,9 @@ public interface IPlugin {
 
     Resources getPluginResource();
 
-    Resources getHostResource();
-
-    Resources getPluginResource(String pluginName);
-
-    void startPluginActivity(PluginIntent intent);
-
     void startPluginActivityForResult(PluginIntent intent, int requestCode);
 
     View findPluginViewById(int id);
 
     void setHost(HostActivity host);
-
-    void setApk(PluginApk apk);
 }

@@ -2,10 +2,13 @@ package com.u1city.u1pluginframework.core;
 
 import android.app.Activity;
 import android.app.Application;
+import android.app.Service;
 import android.content.ComponentCallbacks;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.os.Parcelable;
 import android.os.Process;
@@ -13,16 +16,17 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.u1city.u1pluginframework.core.activity.ChooseActivityDialog;
-import com.u1city.u1pluginframework.core.activity.BaseHostChoosePolicy;
 import com.u1city.u1pluginframework.core.activity.HostActivity;
-import com.u1city.u1pluginframework.core.activity.HostChoosePolicy;
 import com.u1city.u1pluginframework.core.activity.PluginActivity;
 import com.u1city.u1pluginframework.core.error.InstallPluginException;
+import com.u1city.u1pluginframework.core.error.PluginServiceNotFindException;
 import com.u1city.u1pluginframework.core.error.UpdatePluginException;
 import com.u1city.u1pluginframework.core.pm.PackageManager;
 import com.u1city.u1pluginframework.core.pm.PluginApk;
 import com.u1city.u1pluginframework.core.reciever.BroadCastReceiverHost;
 import com.u1city.u1pluginframework.core.reciever.BroadCastReceiverPlugin;
+import com.u1city.u1pluginframework.core.service.HostService;
+import com.u1city.u1pluginframework.core.service.PluginService;
 import com.u1city.u1pluginframework.download.DownloadManager;
 
 import java.io.File;
@@ -30,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * plugin manager
@@ -42,6 +47,7 @@ public class PluginManager implements ComponentCallbacks {
     private Context context;
     private HostChoosePolicy hostChoosePolicy;
     private Map<String, BroadCastReceiverPlugin> receiversById = new HashMap<>();
+    private Map<ServiceInfo, Service> servicesByInfo = new HashMap<>(0);
     //标识是否处于开发模式，当处于开发模式时，所有的插件apk都可以像正常apk一样，默认关闭
     private boolean devIsOpen;
 
@@ -275,12 +281,12 @@ public class PluginManager implements ComponentCallbacks {
             }
             ActivityInfo ai = ais.get(0);
             if (ai != null) {
-                Class<? extends HostActivity> hostClazz = hostChoosePolicy.choose(ai);
+                Class<? extends HostActivity> hostClazz = hostChoosePolicy.chooseHostActivity(ai);
                 intent.setClass(this.context, hostClazz);
                 intent.putExtra(PluginActivity.KEY_PLUGIN_ACTIVITY_INFO, ai);
                 //pluginName不一定等于ai.packageName,也有可能是它所依赖的插件的pluginName
                 intent.putExtra(PluginActivity.KEY_PLUGIN_NAME, ai.packageName);
-                intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY);
+                intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL);
                 if (context instanceof Activity) {
                     ((Activity) context).startActivityForResult(intent, requestCode);
                 } else {
@@ -288,7 +294,6 @@ public class PluginManager implements ComponentCallbacks {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -303,16 +308,82 @@ public class PluginManager implements ComponentCallbacks {
      */
     private void showChooseDialog(Context context, List<ActivityInfo> activities, Intent original) {
         PluginIntent intent = new PluginIntent(original);
-        intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY);
+        intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL);
         intent.putParcelableArrayListExtra(ChooseActivityDialog.KEY_ACTIVITIES, (ArrayList<? extends Parcelable>) activities);
         context.startActivity(intent);
     }
 
-    public void startPluginService(Context context, PluginIntent intent) {
+    /**
+     * 启动service
+     *
+     * @param context context
+     * @param intent  intent
+     * @return ComponentName
+     */
+    public ComponentName startPluginService(Context context, PluginIntent intent) {
         if (devIsOpen) {
             Log.w(TAG, "现在处于开发模式");
+            return null;
+        }
+        try {
+            ServiceInfo si = packageManager.findPluginService(intent);
+            if (si != null) {
+                Class<? extends HostService> clazz = hostChoosePolicy.chooseHostService(si);
+                intent.putExtra(PluginService.KEY_PLUGIN_SERVICE_INFO, si);
+                //pluginName不一定等于ai.packageName,也有可能是它所依赖的插件的pluginName
+                intent.putExtra(PluginService.KEY_PLUGIN_NAME, si.packageName);
+                intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL);
+                intent.setClass(context.getApplicationContext(), clazz);
+                return context.startService(intent);
+            }
+        } catch (PluginServiceNotFindException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * 启动service成功之后由{@link HostService#initPlugin(Intent)}调用，把hostService保存起来以便以后停止service时可以找到
+     *
+     * @param si   serviceInfo 作为key值
+     * @param host hostService value值
+     */
+    public void applyStartPluginServiceSuccess(ServiceInfo si, Service host) {
+        if (si == null || host == null) {
             return;
         }
+        servicesByInfo.put(si, host);
+    }
+
+    /**
+     * 停止service，通过intent找到ServiceInfo，在通过serviceInfo找到宿主service，调用宿主service的stopSelf()
+     *
+     * @param intent intent
+     */
+    public boolean stopPluginService(Intent intent) {
+        try {
+            ServiceInfo si = packageManager.findPluginService(intent);
+            if (si != null) {
+                Service service = getServiceByInfo(si);
+                if (service != null) {
+                    service.stopSelf();
+                    return true;
+                }
+            }
+        } catch (PluginServiceNotFindException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private Service getServiceByInfo(ServiceInfo info) {
+        Set<ServiceInfo> infos = servicesByInfo.keySet();
+        for (ServiceInfo i : infos) {
+            if (TextUtils.equals(info.packageName, i.packageName) && TextUtils.equals(info.name, i.name)) {
+                return servicesByInfo.remove(i);
+            }
+        }
+        return null;
     }
 
     private boolean checkPluginPath(String pluginPath) {
@@ -341,7 +412,7 @@ public class PluginManager implements ComponentCallbacks {
      *
      * @param intent intent
      */
-    public void sendBroadCastReceiver(BroadCastReceiverHost host, Intent intent) {
+    public void sendBroadCastReceiver(Context context, BroadCastReceiverHost host, Intent intent) {
         if (devIsOpen) {
             Log.w(TAG, "现在处于开发模式，不能通过这种方式发送广播");
             return;
@@ -362,11 +433,12 @@ public class PluginManager implements ComponentCallbacks {
             if (apk == null) {
                 continue;
             }
+            ContextDelegate delegate = new ContextDelegate(apk, context);
             try {
                 Class<?> clazz = apk.getClassLoader().loadClass(receiverInfo.name);
                 receiver = (BroadCastReceiverPlugin) clazz.newInstance();
                 receiver.setHost(host);
-                receiver.onReceive(context, intent);
+                receiver.onReceive(delegate, intent);
                 receiversById.put(id, receiver);
             } catch (Exception e) {
                 e.printStackTrace();

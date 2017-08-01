@@ -10,7 +10,7 @@ import android.os.Parcel;
 public class PluginIntent extends Intent {
     public static final String KEY_PLUGIN_ACTION = "key_plugin_action";
     public static final int FLAG_LAUNCH_PLUGIN = 1;
-    public static final int FLAG_LAUNCH_ACTUAL_ACTIVITY = 1<<1;
+    public static final int FLAG_LAUNCH_ACTUAL = 1<<1;
     //默认为插件apk的文件名
     private String pluginName;
     private String pluginComponentName;
@@ -75,28 +75,28 @@ public class PluginIntent extends Intent {
     @Override
     public void writeToParcel(Parcel out, int flags) {
         super.writeToParcel(out, flags);
-        out.writeString(pluginName);
-        out.writeString(pluginComponentName);
-        out.writeString(pluginAction);
-        out.writeInt(pluginFlag);
+//        out.writeString(pluginName);
+//        out.writeString(pluginComponentName);
+//        out.writeString(pluginAction);
+//        out.writeInt(pluginFlag);
     }
 
     @Override
     public void readFromParcel(Parcel in) {
         super.readFromParcel(in);
-        pluginName = in.readString();
-        pluginComponentName = in.readString();
-        pluginAction = in.readString();
-        pluginFlag = in.readInt();
+//        pluginName = in.readString();
+//        pluginComponentName = in.readString();
+//        pluginAction = in.readString();
+//        pluginFlag = in.readInt();
     }
 
-    public static final Creator<PluginIntent> CREATOR
-            = new Creator<PluginIntent>() {
-        public PluginIntent createFromParcel(Parcel source) {
-            return new PluginIntent(source);
-        }
-        public PluginIntent[] newArray(int size) {
-            return new PluginIntent[size];
-        }
-    };
+//    public static final Creator<PluginIntent> CREATOR
+//            = new Creator<PluginIntent>() {
+//        public PluginIntent createFromParcel(Parcel source) {
+//            return new PluginIntent(source);
+//        }
+//        public PluginIntent[] newArray(int size) {
+//            return new PluginIntent[size];
+//        }
+//    };
 }

@@ -192,13 +192,13 @@ public class PackageManager implements ComponentCallbacks {
             * 3.获取intent的Acton
             * */
         String action = null;
-        if(intent instanceof PluginIntent){
-            action = ((PluginIntent)intent).getPluginAction();
+        if (intent instanceof PluginIntent) {
+            action = ((PluginIntent) intent).getPluginAction();
         }
-        if(TextUtils.isEmpty(action)){
+        if (TextUtils.isEmpty(action)) {
             action = intent.getStringExtra(PluginIntent.KEY_PLUGIN_ACTION);
         }
-        if(TextUtils.isEmpty(action)){
+        if (TextUtils.isEmpty(action)) {
             action = intent.getAction();
         }
         if (TextUtils.isEmpty(action)) {
@@ -240,13 +240,13 @@ public class PackageManager implements ComponentCallbacks {
             * 3.获取intent的Acton
             * */
             String action = null;
-            if(intent instanceof PluginIntent){
-                action = ((PluginIntent)intent).getPluginAction();
+            if (intent instanceof PluginIntent) {
+                action = ((PluginIntent) intent).getPluginAction();
             }
-            if(TextUtils.isEmpty(action)){
+            if (TextUtils.isEmpty(action)) {
                 action = intent.getStringExtra(PluginIntent.KEY_PLUGIN_ACTION);
             }
-            if(TextUtils.isEmpty(action)){
+            if (TextUtils.isEmpty(action)) {
                 action = intent.getAction();
             }
             if (TextUtils.isEmpty(action)) {
@@ -272,7 +272,7 @@ public class PackageManager implements ComponentCallbacks {
         return receivers;
     }
 
-    public ServiceInfo findPluginService(PluginIntent intent) throws PluginServiceNotFindException{
+    public ServiceInfo findPluginService(Intent intent) throws PluginServiceNotFindException {
         throw new RuntimeException("此方法暂未实现");
     }
 

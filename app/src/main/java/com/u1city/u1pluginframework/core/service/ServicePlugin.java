@@ -1,22 +1,17 @@
 package com.u1city.u1pluginframework.core.service;
 
-import android.app.Application;
-import android.app.Notification;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.os.IBinder;
 
-import com.u1city.u1pluginframework.core.pm.PluginApk;
+import com.u1city.u1pluginframework.core.PluginContext;
 
 /**
  * Created by wuzr on 2017/7/21.
  * service的插件接口，开发插件apk时应该只使用这个接口提供的api
  */
 
-public interface IPlugin {
-    Application getPluginApplication();
-
+public interface ServicePlugin extends PluginContext{
     IBinder onPluginBind(Intent intent);
 
     void onPluginConfigurationChanged(Configuration newConfig);
@@ -29,8 +24,6 @@ public interface IPlugin {
 
     void onPluginRebind(Intent intent);
 
-    void setApk(PluginApk apk);
-
     @Deprecated
     void onPluginStart(Intent intent, int startId);
 
@@ -38,21 +31,9 @@ public interface IPlugin {
 
     void onPluginTaskRemoved(Intent rootIntent);
 
-    void stopPluginSelf();
-
     void onPluginTrimMemory(int level);
 
     boolean onPluginUnbind(Intent intent);
-
-    Resources getPluginResources();
-
-    void startPluginForeground(int id, Notification notification);
-
-    void stopPluginForeground(boolean removeNotification);
-
-    void stopPluginSelf(int startId);
-
-    boolean stopPluginSelfResult(int startId);
 
     void setHost(HostService host);
 }

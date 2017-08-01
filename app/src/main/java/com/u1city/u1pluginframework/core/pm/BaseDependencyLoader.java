@@ -11,7 +11,7 @@ import java.util.List;
  * 加载依赖plugin
  * Created by wuzr on 2016/12/6.
  */
-public class BaseDependencyLoader implements DependencyLoader {
+class BaseDependencyLoader implements DependencyLoader {
     private static final String TAG = "DependencyLoader";
 
     @Override

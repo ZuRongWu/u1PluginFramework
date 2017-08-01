@@ -19,6 +19,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 
+import com.u1city.u1pluginframework.core.ContextTransverter;
 import com.u1city.u1pluginframework.core.PluginIntent;
 import com.u1city.u1pluginframework.core.PluginManager;
 import com.u1city.u1pluginframework.core.pm.PackageManager;
@@ -30,14 +31,14 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
  */
 public class HostActivity extends FragmentActivity {
     private static final String TAG = "HostActivity";
-    private IPlugin plugin;
+    private ActivityPlugin plugin;
     private boolean devIsOpen;
 
     /**
      * 设置plugin，只有开发模式才可以设置
      * @param plugin plugin
      */
-    void setPlugin(IPlugin plugin){
+    void setPlugin(ActivityPlugin plugin){
         devIsOpen = PluginManager.getInstance(this).getDevIsOpen();
         if(devIsOpen){
             this.plugin = plugin;
@@ -67,12 +68,14 @@ public class HostActivity extends FragmentActivity {
         String acName = ai.name;
         try {
             Class acClazz = apk.getClassLoader().loadClass(acName);
-            plugin = (IPlugin) acClazz.newInstance();
+            plugin = (ActivityPlugin) acClazz.newInstance();
             plugin.setApk(apk);
-            plugin.setHost(this);
+            plugin.setHost(ContextTransverter.transformActivity(apk,this));
         } catch (Exception e) {
+            //出现异常结束启动流程
             e.printStackTrace();
             finish();
+            return;
         }
         //把activity的theme替换成插件activity的theme
         onApplyThemeResource(getTheme(), ai.theme, false);
@@ -715,11 +718,7 @@ public class HostActivity extends FragmentActivity {
 
     @Override
     public Resources getResources() {
-        if (plugin != null&&!devIsOpen) {
-            return plugin.getPluginResource();
-        } else {
-            return super.getResources();
-        }
+        return super.getResources();
     }
 
     public Resources getHostResource() {
@@ -729,9 +728,9 @@ public class HostActivity extends FragmentActivity {
     @Override
     public void startActivityForResult(Intent intent, int requestCode) {
         if (plugin != null) {
-            if ((intent instanceof PluginIntent)&&((PluginIntent)intent).hasFlag(PluginIntent.FLAG_LAUNCH_PLUGIN)) { //启动一个pluginactivity
+            if ((intent instanceof PluginIntent)) { //启动一个pluginactivity
                 PluginIntent pluginIntent = (PluginIntent) intent;
-                if (pluginIntent.hasFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY)) {
+                if (pluginIntent.hasFlag(PluginIntent.FLAG_LAUNCH_ACTUAL)) {
                     super.startActivityForResult(pluginIntent, requestCode);
                 } else {
                     PluginManager.getInstance(getApplicationContext()).startPluginActivityForResult(this, pluginIntent, requestCode);

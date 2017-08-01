@@ -60,7 +60,7 @@ public class ExposeHostActivity extends HostActivity {
      */
     private void showChooseDialog(List<ActivityInfo> infos){
         PluginIntent intent = new PluginIntent(getIntent());
-        intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL_ACTIVITY);
+        intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL);
         intent.putParcelableArrayListExtra(ChooseActivityDialog.KEY_ACTIVITIES, (ArrayList<? extends Parcelable>) infos);
         startActivity(intent);
         finish();

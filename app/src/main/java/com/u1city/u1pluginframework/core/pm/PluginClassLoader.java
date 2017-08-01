@@ -17,7 +17,7 @@ import dalvik.system.DexClassLoader;
  * 插件类加载器,查找的顺序是：本插件对应的代码->依次查找它依赖的插件的代码
  * Created by wuzr on 2016/12/6.
  */
-public class PluginClassLoader extends DexClassLoader {
+class PluginClassLoader extends DexClassLoader {
 
     //依赖的插件的classLoader
     private List<ClassLoader> otherLoaders = new ArrayList<>(0);

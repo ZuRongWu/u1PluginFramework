@@ -1,6 +1,7 @@
 package com.u1city.u1pluginframework.utils;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * Created by wuzr on 2017/7/14.
@@ -10,17 +11,18 @@ import java.lang.reflect.Field;
 public class ReflectUtils {
     /**
      * 获取属性对应的值
+     *
      * @param fieldName 指定属性的名称
-     * @param obj 对应的对象
+     * @param obj       对应的对象
      * @return 属性值
      */
-    public static Object readField(String fieldName,Object obj){
-        for(Class<?> c = obj.getClass(); c != Object.class; c = c.getSuperclass()){
-            try{
+    public static Object readField(String fieldName, Object obj) {
+        for (Class<?> c = obj.getClass(); c != Object.class; c = c.getSuperclass()) {
+            try {
                 Field info = c.getDeclaredField(fieldName);
                 info.setAccessible(true);
                 return info.get(obj);
-            }catch (Exception e){
+            } catch (Exception e) {
                 //do nothing
             }
         }
@@ -29,22 +31,45 @@ public class ReflectUtils {
 
     /**
      * 设置对应属性的值
+     *
      * @param fieldName 属性名称
-     * @param obj 对应的对象
-     * @param value 值
+     * @param obj       对应的对象
+     * @param value     值
      * @return true 设置成功；false 设置失败
      */
-    public static boolean setField(String fieldName,Object obj,Object value){
-        for(Class<?> c = obj.getClass(); c != Object.class; c.getSuperclass()){
-            try{
+    public static boolean setField(String fieldName, Object obj, Object value) {
+        for (Class<?> c = obj.getClass(); c != Object.class; c.getSuperclass()) {
+            try {
                 Field info = c.getDeclaredField(fieldName);
                 info.setAccessible(true);
-                info.set(obj,value);
+                info.set(obj, value);
                 return true;
-            }catch (Exception e){
+            } catch (Exception e) {
                 //do nothing
             }
         }
         return false;
+    }
+
+    public static Method findMethod(Class clazz, String name, Object... params) {
+        Class[] paramsType;
+        if (params == null) {
+            paramsType = new Class[0];
+        } else {
+            paramsType = new Class[params.length];
+            int index = 0;
+            for (Object obj : params) {
+                paramsType[index] = obj.getClass();
+                index++;
+            }
+        }
+        for (Class<?> c = clazz; c != Object.class; c = c.getSuperclass()) {
+            try {
+                return clazz.getDeclaredMethod(name, paramsType);
+            } catch (Exception e) {
+                //do nothing
+            }
+        }
+        return null;
     }
 }
