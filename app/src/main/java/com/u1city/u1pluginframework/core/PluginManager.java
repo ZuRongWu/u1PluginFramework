@@ -2,19 +2,22 @@ package com.u1city.u1pluginframework.core;
 
 import android.app.Activity;
 import android.app.Application;
-import android.app.Service;
 import android.content.ComponentCallbacks;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
+import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.Process;
+import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.u1city.u1pluginframework.IPluginBinderProvider;
 import com.u1city.u1pluginframework.core.activity.ChooseActivityDialog;
 import com.u1city.u1pluginframework.core.activity.HostActivity;
 import com.u1city.u1pluginframework.core.activity.PluginActivity;
@@ -26,6 +29,8 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
 import com.u1city.u1pluginframework.core.reciever.BroadCastReceiverHost;
 import com.u1city.u1pluginframework.core.reciever.BroadCastReceiverPlugin;
 import com.u1city.u1pluginframework.core.service.HostService;
+import com.u1city.u1pluginframework.core.service.PluginServiceContainer;
+import com.u1city.u1pluginframework.core.service.IPlugin;
 import com.u1city.u1pluginframework.core.service.PluginService;
 import com.u1city.u1pluginframework.download.DownloadManager;
 
@@ -46,8 +51,9 @@ public class PluginManager implements ComponentCallbacks {
     private PackageManager packageManager;
     private Context context;
     private HostChoosePolicy hostChoosePolicy;
-    private Map<String, BroadCastReceiverPlugin> receiversById = new HashMap<>();
-    private Map<ServiceInfo, Service> servicesByInfo = new HashMap<>(0);
+    private Map<String, BroadCastReceiverPlugin> receiversById;
+    private Map<HostService, PluginServiceContainer> pluginServiceContainers;
+    private Map<IPlugin, List<ServiceConnectionContainer>> serviceConnections;
     //标识是否处于开发模式，当处于开发模式时，所有的插件apk都可以像正常apk一样，默认关闭
     private boolean devIsOpen;
 
@@ -85,6 +91,13 @@ public class PluginManager implements ComponentCallbacks {
         void onInstallError(String reason);
     }
 
+    private class ServiceConnectionContainer {
+        //宿主的serviceConnection
+        ServiceConnection hostConnection;
+        //插件的serviceConnection
+        ServiceConnection pluginConnection;
+    }
+
     public static PluginManager getInstance(Context context) {
         if (sPluginManager == null) {
             synchronized (PluginManager.class) {
@@ -101,6 +114,9 @@ public class PluginManager implements ComponentCallbacks {
         packageManager = PackageManager.getInstance(this.context);
         hostChoosePolicy = new BaseHostChoosePolicy();
         this.context.registerComponentCallbacks(this);
+        pluginServiceContainers = new HashMap<>(0);
+        receiversById = new HashMap<>(0);
+        serviceConnections = new HashMap<>(0);
     }
 
     public boolean getDevIsOpen() {
@@ -320,7 +336,7 @@ public class PluginManager implements ComponentCallbacks {
      * @param intent  intent
      * @return ComponentName
      */
-    public ComponentName startPluginService(Context context, PluginIntent intent) {
+    ComponentName startPluginService(Context context, PluginIntent intent) {
         if (devIsOpen) {
             Log.w(TAG, "现在处于开发模式");
             return null;
@@ -342,45 +358,152 @@ public class PluginManager implements ComponentCallbacks {
         return null;
     }
 
-    /**
-     * 启动service成功之后由{@link HostService#initPlugin(Intent)}调用，把hostService保存起来以便以后停止service时可以找到
-     *
-     * @param si   serviceInfo 作为key值
-     * @param host hostService value值
-     */
-    public void applyStartPluginServiceSuccess(ServiceInfo si, Service host) {
-        if (si == null || host == null) {
-            return;
+    boolean bindPluginService(Context context, final PluginIntent intent, final ServiceConnection connection, int flag) {
+        if (devIsOpen) {
+            Log.w(TAG, "现在处于开发模式");
+            return false;
         }
-        servicesByInfo.put(si, host);
+        try {
+            final ServiceInfo si = packageManager.findPluginService(intent);
+            if (si != null) {
+                Class<? extends HostService> clazz = hostChoosePolicy.chooseHostService(si);
+                intent.putExtra(PluginService.KEY_PLUGIN_SERVICE_INFO, si);
+                //pluginName不一定等于ai.packageName,也有可能是它所依赖的插件的pluginName
+                intent.putExtra(PluginService.KEY_PLUGIN_NAME, si.packageName);
+                intent.addPluginFlag(PluginIntent.FLAG_LAUNCH_ACTUAL);
+                intent.setClass(context.getApplicationContext(), clazz);
+                return context.bindService(intent, new ServiceConnection() {
+                    @Override
+                    public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                        IBinder pluginBinder; //这里将获取pluginService的IBinder
+                        try {
+                            pluginBinder = IPluginBinderProvider.Stub.asInterface(iBinder).getPluginBinder(intent);
+                        } catch (RemoteException e) {
+                            //pluginBinder获取失败
+                            e.printStackTrace();
+                            return;
+                        }
+                        //把connection到connections map中
+                        IPlugin plugin = getServicePlugin(si);
+                        if (plugin == null) {
+                            //plugin service启动失败
+                            return;
+                        }
+                        List<ServiceConnectionContainer> cs = serviceConnections.get(plugin);
+                        if (cs == null) {
+                            cs = new ArrayList<>(1);
+                            serviceConnections.put(plugin, cs);
+                        }
+                        ServiceConnectionContainer container = new ServiceConnectionContainer();
+                        container.hostConnection = this;
+                        container.pluginConnection = connection;
+                        cs.add(container);
+                        ComponentName pluginComponentName = new ComponentName(si.packageName, si.name);
+                        connection.onServiceConnected(pluginComponentName, pluginBinder);
+                    }
+
+                    @Override
+                    public void onServiceDisconnected(ComponentName componentName) {
+                        IPlugin plugin = getServicePlugin(si);
+                        if (plugin == null) {
+                            return;
+                        }
+                        List<ServiceConnectionContainer> cs = serviceConnections.get(plugin);
+                        ServiceConnectionContainer container = null;
+                        for (ServiceConnectionContainer c : cs) {
+                            if (c.pluginConnection == connection) {
+                                container = c;
+                                break;
+                            }
+                        }
+                        if (container == null) {
+                            return;
+                        }
+                        cs.remove(container);
+                        ComponentName pluginComponentName = new ComponentName(si.packageName, si.name);
+                        connection.onServiceDisconnected(pluginComponentName);
+                        if (cs.size() == 0) {
+                            //如果没有其他地方连接pluginService则停止pluginService
+                            stopPluginServiceInternal(si, intent);
+                        }
+                    }
+                }, flag);
+            }
+        } catch (PluginServiceNotFindException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        return false;
     }
 
-    /**
-     * 停止service，通过intent找到ServiceInfo，在通过serviceInfo找到宿主service，调用宿主service的stopSelf()
-     *
-     * @param intent intent
-     */
-    public boolean stopPluginService(Intent intent) {
-        try {
-            ServiceInfo si = packageManager.findPluginService(intent);
-            if (si != null) {
-                Service service = getServiceByInfo(si);
-                if (service != null) {
-                    service.stopSelf();
-                    return true;
+    void unbindPluginService(ServiceConnection conn) {
+        if (conn == null) {
+            return;
+        }
+        Set<IPlugin> plugins = serviceConnections.keySet();
+        ServiceConnectionContainer container = null;
+        for (IPlugin p : plugins) {
+            for (ServiceConnectionContainer c : serviceConnections.get(p)) {
+                if (conn == c.pluginConnection) {
+                    container = c;
+                    break;
                 }
             }
+            if (container != null) {
+                break;
+            }
+        }
+        if (container == null) {
+            //没有找到对应的hostConnection
+            return;
+        }
+        this.context.unbindService(container.hostConnection);
+    }
+
+    public void applyHostServiceStopped(HostService host) {
+        pluginServiceContainers.remove(host);
+    }
+
+    public void applyHostServiceStarted(HostService host, PluginServiceContainer container) {
+        if (host == null || container == null) {
+            return;
+        }
+        pluginServiceContainers.put(host, container);
+    }
+
+    boolean stopPluginService(Intent intent) {
+        try {
+            ServiceInfo si = packageManager.findPluginService(intent);
+            return stopPluginServiceInternal(si, intent);
         } catch (PluginServiceNotFindException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    private Service getServiceByInfo(ServiceInfo info) {
-        Set<ServiceInfo> infos = servicesByInfo.keySet();
-        for (ServiceInfo i : infos) {
-            if (TextUtils.equals(info.packageName, i.packageName) && TextUtils.equals(info.name, i.name)) {
-                return servicesByInfo.remove(i);
+    private boolean stopPluginServiceInternal(ServiceInfo si, Intent intent) {
+        IPlugin plugin = getServicePlugin(si);
+        if (plugin == null) {
+            //对应的service没有启动，不需要停止
+            return true;
+        }
+        List<ServiceConnectionContainer> connections = serviceConnections.get(plugin);
+        if (connections != null && connections.size() > 0) {
+            //在其他地方有绑定到service，不能停止service
+            return false;
+        }
+        PluginServiceContainer container = plugin.getPluginContainer();
+        container.stopService(intent);
+        return true;
+    }
+
+    private IPlugin getServicePlugin(ServiceInfo si) {
+        String id = PluginServiceContainer.generateServiceId(si.packageName, si.name);
+        Set<HostService> keys = pluginServiceContainers.keySet();
+        for (HostService h : keys) {
+            PluginServiceContainer container = pluginServiceContainers.get(h);
+            IPlugin plugin = container.getServicePlugin(id);
+            if (plugin != null) {
+                return plugin;
             }
         }
         return null;
@@ -449,5 +572,4 @@ public class PluginManager implements ComponentCallbacks {
     private String generateReceiverId(ActivityInfo info) {
         return info.packageName + "::" + info.name;
     }
-
 }

@@ -521,6 +521,8 @@ public class ContextDelegate extends Context {
                     return mHostContext.bindService(intent,serviceConnection,i);
                 }else{
                     //调用pluginManager绑定service
+                    prepareIntent(intent);
+                    PluginManager.getInstance(null).bindPluginService(this,(PluginIntent)intent,serviceConnection,i);
                 }
             }else{
                 return mHostContext.bindService(intent,serviceConnection,i);
@@ -531,7 +533,11 @@ public class ContextDelegate extends Context {
 
     @Override
     public void unbindService(@NonNull ServiceConnection serviceConnection) {
-
+        if(mDevIsOpen){
+            mHostContext.unbindService(serviceConnection);
+            return;
+        }
+        PluginManager.getInstance(null).unbindPluginService(serviceConnection);
     }
 
     @Override

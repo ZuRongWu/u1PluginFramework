@@ -108,7 +108,7 @@ public class DownloadManager {
     private List<DownLoadTask> mWorkingTask = new ArrayList<>(3);
     private String mDownloadDir;
     private boolean mIsRunnig;
-    private Object mLock = new Object();
+    private final Object mLock = new Object();
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {

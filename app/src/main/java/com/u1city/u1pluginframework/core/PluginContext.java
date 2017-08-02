@@ -18,4 +18,6 @@ public interface PluginContext {
      * @return plugin描述的插件的resources对象
      */
     Resources getResources(String plugin);
+
+    String getPluginName();
 }

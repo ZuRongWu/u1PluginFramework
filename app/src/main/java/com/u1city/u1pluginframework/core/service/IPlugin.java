@@ -11,7 +11,7 @@ import com.u1city.u1pluginframework.core.PluginContext;
  * service的插件接口，开发插件apk时应该只使用这个接口提供的api
  */
 
-public interface ServicePlugin extends PluginContext{
+public interface IPlugin extends PluginContext{
     IBinder onPluginBind(Intent intent);
 
     void onPluginConfigurationChanged(Configuration newConfig);
@@ -36,4 +36,8 @@ public interface ServicePlugin extends PluginContext{
     boolean onPluginUnbind(Intent intent);
 
     void setHost(HostService host);
+
+    void setPluginContainer(PluginServiceContainer container);
+
+    PluginServiceContainer getPluginContainer();
 }

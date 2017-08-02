@@ -31,7 +31,7 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
  * 或者是引发异常，应该避免使用。当以正常模式启动activity时，开发者仍可使用activity的API
  * Created by user on 2016/12/2.
  */
-public class PluginActivity extends HostActivity implements ActivityPlugin {
+public class PluginActivity extends HostActivity implements IPlugin {
     public static final String KEY_PLUGIN_ACTIVITY_INFO = "key_plugin_activityInfo";
     public static final String KEY_PLUGIN_NAME = "key_plugin_name";
     private static final String TAG = "PluginActivity";
@@ -389,5 +389,10 @@ public class PluginActivity extends HostActivity implements ActivityPlugin {
             return apk.getResources(plugin);
         }
         return null;
+    }
+
+    @Override
+    public String getPluginName() {
+        return apk != null?apk.getPluginName():null;
     }
 }

@@ -5,7 +5,6 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.IBinder;
 
-import com.u1city.u1pluginframework.core.PluginContext;
 import com.u1city.u1pluginframework.core.PluginManager;
 import com.u1city.u1pluginframework.core.pm.PluginApk;
 
@@ -13,12 +12,13 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
  * 所有的插件的service都要继承这个类，开发中使用host的方法
  * Created by wuzr on 2016/12/2.
  */
-public class PluginService extends HostService implements ServicePlugin{
+public class PluginService extends HostService implements IPlugin {
     public static final String KEY_PLUGIN_NAME = "key_plugin_name";
     public static final String KEY_PLUGIN_SERVICE_INFO = "key_service_info";
 
-    protected HostService mHost;
+    protected HostService host;
     private PluginApk apk;
+    private PluginServiceContainer container;
 
     public PluginService(){
         boolean devIsOpen = PluginManager.getInstance(null).getDevIsOpen();
@@ -28,7 +28,17 @@ public class PluginService extends HostService implements ServicePlugin{
     }
 
     public void setHost(HostService host){
-        this.mHost = host;
+        this.host = host;
+    }
+
+    @Override
+    public void setPluginContainer(PluginServiceContainer container) {
+        this.container = container;
+    }
+
+    @Override
+    public PluginServiceContainer getPluginContainer() {
+        return this.container;
     }
 
     @Override
@@ -38,32 +48,31 @@ public class PluginService extends HostService implements ServicePlugin{
 
     @Override
     public void onPluginConfigurationChanged(Configuration newConfig) {
-        mHost.onSuperConfigurationChanged(newConfig);
+        host.onSuperConfigurationChanged(newConfig);
     }
 
     @Override
     public void onPluginCreate() {
-        mHost.onSuperCreate();
+        host.onSuperCreate();
     }
 
     @Override
     public void onPluginDestroy() {
-        mHost.onSuperDestroy();
+        host.onSuperDestroy();
     }
 
     @Override
     public void onPluginLowMemory() {
-        mHost.onSuperLowMemory();
+        host.onSuperLowMemory();
     }
 
     @Override
     public void onPluginRebind(Intent intent) {
-        mHost.onSuperRebind(intent);
+        host.onSuperRebind(intent);
     }
 
     @Override
     public void setApk(PluginApk apk) {
-        //do nothing
         this.apk = apk;
     }
 
@@ -76,27 +85,32 @@ public class PluginService extends HostService implements ServicePlugin{
     }
 
     @Override
+    public String getPluginName() {
+        return apk != null?apk.getPluginName():null;
+    }
+
+    @Override
     public void onPluginStart(Intent intent, int startId) {
-        mHost.onSuperStart(intent,startId);
+        host.onSuperStart(intent,startId);
     }
 
     @Override
     public int onPluginStartCommand(Intent intent, int flags, int startId) {
-        return mHost.onSuperStartCommand(intent,flags,startId);
+        return host.onSuperStartCommand(intent,flags,startId);
     }
 
     @Override
     public void onPluginTaskRemoved(Intent rootIntent) {
-        mHost.onSuperTaskRemoved(rootIntent);
+        host.onSuperTaskRemoved(rootIntent);
     }
 
     @Override
     public void onPluginTrimMemory(int level) {
-        mHost.onSuperTrimMemory(level);
+        host.onSuperTrimMemory(level);
     }
 
     @Override
     public boolean onPluginUnbind(Intent intent) {
-        return mHost.onSuperUnbind(intent);
+        return host.onSuperUnbind(intent);
     }
 }

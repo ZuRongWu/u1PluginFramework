@@ -22,6 +22,8 @@
         <activity android:name=".core.activity.ChooseActivityDialog"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
         <receiver android:name=".core.reciever.BroadCastReceiverHost"/>
+
+        <service android:name=".core.service.HostService"/>
     </application>
 
 </manifest>

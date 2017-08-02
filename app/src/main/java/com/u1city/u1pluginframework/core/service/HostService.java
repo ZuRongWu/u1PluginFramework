@@ -6,10 +6,12 @@ import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.u1city.u1pluginframework.IPluginBinderProvider;
 import com.u1city.u1pluginframework.core.ContextTransverter;
 import com.u1city.u1pluginframework.core.PluginManager;
 import com.u1city.u1pluginframework.core.pm.PackageManager;
@@ -23,11 +25,29 @@ public class HostService extends Service {
     private static final String TAG = "HostService";
     private boolean devIsOpen;
     private PluginServiceContainer pluginContainer;
+    private PluginBinderProvider pluginBinderProvider = new PluginBinderProvider();
+
+    private class PluginBinderProvider extends IPluginBinderProvider.Stub{
+
+        @Override
+        public void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, String aString) throws RemoteException {
+            //do nothing
+        }
+
+        @Override
+        public IBinder getPluginBinder(Intent intent) throws RemoteException {
+            if(initPlugin(intent)){
+                return pluginContainer.onPluginBind(intent);
+            }
+            return null;
+        }
+    }
+
     public HostService(){
         devIsOpen = PluginManager.getInstance(this).getDevIsOpen();
     }
 
-    void setPlugin(ServicePlugin pluginContainer){
+    void setPlugin(IPlugin pluginContainer){
 //        if(devIsOpen){
 //            this.pluginContainer = pluginContainer;
 //        }else{
@@ -38,10 +58,7 @@ public class HostService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        if(initPlugin(intent)){
-            return pluginContainer.onPluginBind(intent);
-        }
-        return null;
+        return pluginBinderProvider;
     }
 
     @Override
@@ -186,6 +203,8 @@ public class HostService extends Service {
         if(pluginContainer == null){
             //plugin不为空时说明plugin已经初始化完成
             pluginContainer = new PluginServiceContainer();
+            PluginManager.getInstance(null).applyHostServiceStarted(this,pluginContainer);
+            pluginContainer.setHost(this);
         }
         String pluginName = intent.getStringExtra(PluginService.KEY_PLUGIN_NAME);
         if(TextUtils.isEmpty(pluginName)){
@@ -205,7 +224,7 @@ public class HostService extends Service {
             }
             return false;
         }
-        String id = pluginContainer.generateServiceId(si.packageName,si.name);
+        String id = PluginServiceContainer.generateServiceId(si.packageName,si.name);
         if(pluginContainer.containServicePlugin(id)){
             //如果container中包含将要启动的service说明service已经启动不需要重复启动
             return true;
@@ -220,12 +239,13 @@ public class HostService extends Service {
         }
         try {
             Class sClazz = apk.getClassLoader().loadClass(si.name);
-            ServicePlugin plugin = (ServicePlugin) sClazz.newInstance();
+            IPlugin plugin = (IPlugin) sClazz.newInstance();
             plugin.setApk(apk);
             plugin.setHost(ContextTransverter.transformService(apk,this));
+            plugin.setPluginContainer(pluginContainer);
             plugin.onPluginCreate();
             pluginContainer.addPluginService(id,plugin);
-//            PluginManager.getInstance(null).applyStartPluginServiceSuccess(si,this);
+//            PluginManager.getInstance(null).applyHostServiceStopped(si,this);
             return true;
         } catch (Exception e) {
             e.printStackTrace();

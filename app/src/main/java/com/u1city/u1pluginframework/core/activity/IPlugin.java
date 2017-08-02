@@ -23,7 +23,7 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
  * pluginActivity的接口
  * Created by wuzr on 2016/12/5.
  */
-interface ActivityPlugin extends PluginContext{
+interface IPlugin extends PluginContext{
     void onPluginCreate(Bundle savedInstanceState);
 
     void onPluginStart();

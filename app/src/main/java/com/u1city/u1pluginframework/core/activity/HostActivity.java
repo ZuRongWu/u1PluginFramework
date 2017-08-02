@@ -31,14 +31,14 @@ import com.u1city.u1pluginframework.core.pm.PluginApk;
  */
 public class HostActivity extends FragmentActivity {
     private static final String TAG = "HostActivity";
-    private ActivityPlugin plugin;
+    private IPlugin plugin;
     private boolean devIsOpen;
 
     /**
      * 设置plugin，只有开发模式才可以设置
      * @param plugin plugin
      */
-    void setPlugin(ActivityPlugin plugin){
+    void setPlugin(IPlugin plugin){
         devIsOpen = PluginManager.getInstance(this).getDevIsOpen();
         if(devIsOpen){
             this.plugin = plugin;
@@ -68,7 +68,7 @@ public class HostActivity extends FragmentActivity {
         String acName = ai.name;
         try {
             Class acClazz = apk.getClassLoader().loadClass(acName);
-            plugin = (ActivityPlugin) acClazz.newInstance();
+            plugin = (IPlugin) acClazz.newInstance();
             plugin.setApk(apk);
             plugin.setHost(ContextTransverter.transformActivity(apk,this));
         } catch (Exception e) {

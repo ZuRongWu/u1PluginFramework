@@ -223,6 +223,46 @@ public class PackageManager implements ComponentCallbacks {
         return activityInfos;
     }
 
+    private ServiceInfo resolveService(Intent intent, PluginApk apk) {
+        ServiceInfo si;
+        /*
+            * 获取action，
+            * 1.如果intent是PluginIntent，获取PluginIntent的pluginAction，如果为空走2，
+            * 2.获取key为PluginIntent.KEY_PLUGIN_ACTION的StringExtra，如果为空走3
+            * 3.获取intent的Acton
+            * */
+        String action = null;
+        if (intent instanceof PluginIntent) {
+            action = ((PluginIntent) intent).getPluginAction();
+        }
+        if (TextUtils.isEmpty(action)) {
+            action = intent.getStringExtra(PluginIntent.KEY_PLUGIN_ACTION);
+        }
+        if (TextUtils.isEmpty(action)) {
+            action = intent.getAction();
+        }
+        if (TextUtils.isEmpty(action)) {
+            //如果action为空则不再往下找
+            return null;
+        }
+        String dataType = intent.getType();
+        String scheme = intent.getScheme();
+        Uri data = intent.getData();
+        Set<String> categories = intent.getCategories();
+        for (PluginApk.Service service : apk.getPluginServices()) {
+            for (IntentFilter filter : service.intents) {
+                int res = filter.match(action, dataType, scheme, data, categories, TAG);
+                if ((res & IntentFilter.NO_MATCH_ACTION) == 0 &&
+                        (res & IntentFilter.NO_MATCH_CATEGORY) == 0 &&
+                        (res & IntentFilter.NO_MATCH_DATA) == 0) {
+                    si = service.serviceInfo;
+                    return si;
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * 查找所有和intent匹配的receiver
      *
@@ -273,7 +313,81 @@ public class PackageManager implements ComponentCallbacks {
     }
 
     public ServiceInfo findPluginService(Intent intent) throws PluginServiceNotFindException {
-        throw new RuntimeException("此方法暂未实现");
+        ServiceInfo si;
+        if (intent instanceof PluginIntent) {
+            PluginIntent pIntent = (PluginIntent) intent;
+            String pluginName = pIntent.getPluginName();
+            String componentName = pIntent.getPluginComponentName();
+            //处理显式启动
+            if (!TextUtils.isEmpty(pluginName) && !TextUtils.isEmpty(componentName)) {
+                //如果pluginName和componentName都不为空则是显式启动
+                if (componentName.startsWith(".")) {
+                    componentName = pluginName + componentName;
+                }
+                PluginApk apk = getPlugin(pluginName);
+                if (apk == null) {
+                    throw new PluginServiceNotFindException(String.format("没有找到匹配的service，pluginName：%s；componentName：%s", pluginName, componentName));
+                }
+                List<PluginApk.Service> activities = apk.getPluginServices();
+                for (PluginApk.Service service : activities) {
+                    if (service.className.equals(componentName)) {
+                        si = service.serviceInfo;
+                        return si;
+                    }
+                }
+                //如果没找到，从依赖中查找
+                List<PluginApk.Dependency> dependencies = apk.getDependencies();
+                if (dependencies != null) {
+                    for (PluginApk.Dependency dependency : dependencies) {
+                        PluginApk dpapk = getPlugin(dependency.name);
+                        if (dpapk != null) {
+                            //正常情况应该一定可以执行到这里
+                            for (PluginApk.Service service : dpapk.getPluginServices()) {
+                                if (service.className.equals(componentName)) {
+                                    si = service.serviceInfo;
+                                    return si;
+                                }
+                            }
+                        }
+                    }
+                }
+                throw new PluginServiceNotFindException(String.format("没有找到匹配的service，pluginName：%s；componentName：%s", pluginName, componentName));
+            }
+            //处理隐式启动
+            if (!TextUtils.isEmpty(componentName)) {
+                //pluginName为空componentName不为空时，从所有插件中查找与componentName匹配的service
+                List<PluginApk> apks = getPlugins();
+                for (PluginApk apk : apks) {
+                    for (PluginApk.Service service : apk.getPluginServices()) {
+                        if (service.className.equals(componentName)) {
+                            si = service.serviceInfo;
+                            return si;
+                        }
+                    }
+                }
+                throw new PluginServiceNotFindException(String.format("没有找到匹配的service，componentName：%s", componentName));
+            }
+            if (!TextUtils.isEmpty(pluginName)) {
+                //pluginName不为空componentName为空时，从指定的插件apk中查找service
+                PluginApk apk = getPlugin(pluginName);
+                if (apk == null) {
+                    throw new PluginServiceNotFindException(String.format("没有找到匹配的service，pluginName：%s", pluginName));
+                }
+                si = resolveService(intent, apk);
+                if (si != null) {
+                    return si;
+                }
+                throw new PluginServiceNotFindException(String.format("没有找到匹配的service，pluginName：%s", pluginName));
+            }
+        }
+        List<PluginApk> apks = getPlugins();
+        for (PluginApk apk : apks) {
+            si = resolveService(intent,apk);
+            if (si != null) {
+                return si;
+            }
+        }
+        throw new PluginServiceNotFindException(String.format("没有找到匹配的service，intent：%s", intent.toString()));
     }
 
     /**
@@ -379,7 +493,7 @@ public class PackageManager implements ComponentCallbacks {
      * @param isUpdate   true时：表示此次卸载是为了安装新的插件包，所以不管有没有插件依赖此插件都可以卸载，因为马上会安装新的
      * @param pluginName 指定要卸载的插件
      */
-    public void unInstallPlugin(String pluginName, boolean isUpdate) {
+    private void unInstallPlugin(String pluginName, boolean isUpdate) {
         //检查是否安装过pluginName指定的插件，如果没有安装则直接返回
         if (pluginsByName.get(pluginName) == null) {
             Log.w(TAG, "没有安装此插件");
